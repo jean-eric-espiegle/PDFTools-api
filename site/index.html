@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PDF Toolkit API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Merge, split, compress, and rasterize PDFs over a simple REST API. Four endpoints, one JSON response format, transparent per-operation pricing.">
+<link rel="canonical" href="https://pdf-toolkit-api.fly.dev/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="PDF Toolkit API">
+<meta property="og:description" content="Merge, split, compress, and rasterize PDFs over a simple REST API. Four endpoints, one JSON response format, transparent per-operation pricing.">
+<meta property="og:url" content="https://pdf-toolkit-api.fly.dev/">
+<meta property="og:image" content="https://pdf-toolkit-api.fly.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PDF Toolkit API">
+<meta name="twitter:description" content="Merge, split, compress, and rasterize PDFs over a simple REST API. Four endpoints, one JSON response format, transparent per-operation pricing.">
+<meta name="twitter:image" content="https://pdf-toolkit-api.fly.dev/og-image.png">
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PDF Toolkit API",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any",
+  "url": "https://pdf-toolkit-api.fly.dev/",
+  "description": "A REST API for merging, splitting, compressing, and rasterizing PDFs. Four endpoints, one JSON response format.",
+  "offers": [
+    { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "description": "100 operations per month" },
+    { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "description": "2,000 operations per month, billed monthly" },
+    { "@type": "Offer", "name": "Pro", "price": "29", "priceCurrency": "USD", "description": "10,000 operations per month, billed monthly" },
+    { "@type": "Offer", "name": "Scale", "price": "99", "priceCurrency": "USD", "description": "50,000 operations per month, billed monthly" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is there a free tier?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. 100 operations per month, no credit card required." }
+    },
+    {
+      "@type": "Question",
+      "name": "What operations does the API support?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Merge, split, compress, and rasterize to image. That's the whole surface area, deliberately." }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens when I exceed my plan's quota?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Paid plans bill $0.002 per operation beyond the included quota, automatically. Free-plan requests past the quota are rejected with a 429 until the next calendar month." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it support OCR or e-signing?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. The API is scoped to four operations on purpose, not a general document platform." }
+    },
+    {
+      "@type": "Question",
+      "name": "What format does the API return?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The four file endpoints return raw bytes directly, so a plain curl -o file.pdf works. Everything else uses one JSON envelope: { code, status, data }." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a Node.js or Python SDK?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No SDK needed. It's plain REST over HTTP; the docs show curl examples that work from any language with an HTTP client." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --surface-sunken: #f2efe8;
+    --accent-wash: color-mix(in srgb, #c43b24 8%, #ffffff);
+    --ink: #18140f;
+    --ink-muted: #6b6459;
+    --ink-faint: #9b9384;
+    --border: #e7e2d9;
+    --accent: #c43b24;
+    --accent-strong: #a8331f;
+    --accent-ink: #fff8f3;
+    --code-bg: #18140f;
+    --code-ink: #f2eee6;
+    --code-accent: #ff9270;
+    --shadow: 0 1px 2px rgb(24 20 15 / 0.04), 0 8px 24px rgb(24 20 15 / 0.06);
+    --radius: 4px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f;
+      --surface: #1f1b15;
+      --surface-sunken: #241f18;
+      --accent-wash: color-mix(in srgb, #ff6a47 10%, #1f1b15);
+      --ink: #f2eee6;
+      --ink-muted: #b0a89a;
+      --ink-faint: #756e60;
+      --border: #332e26;
+      --accent: #ff6a47;
+      --accent-strong: #ff8264;
+      --accent-ink: #1a0d08;
+      --code-bg: #100d09;
+      --code-ink: #f2eee6;
+      --code-accent: #ff9270;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f;
+    --surface: #1f1b15;
+    --surface-sunken: #241f18;
+    --accent-wash: color-mix(in srgb, #ff6a47 10%, #1f1b15);
+    --ink: #f2eee6;
+    --ink-muted: #b0a89a;
+    --ink-faint: #756e60;
+    --border: #332e26;
+    --accent: #ff6a47;
+    --accent-strong: #ff8264;
+    --accent-ink: #1a0d08;
+    --code-bg: #100d09;
+    --code-ink: #f2eee6;
+    --code-accent: #ff9270;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+  code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding-left: clamp(1.25rem, 4vw, 2.5rem); padding-right: clamp(1.25rem, 4vw, 2.5rem); }
+
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; background: var(--accent); color: var(--accent-ink);
+    padding: 0.6rem 1rem; z-index: 100; border-radius: var(--radius);
+  }
+  .skip-link:focus { left: 1rem; top: 1rem; }
+
+  /* --- Top bar --- */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-family: "Sora", sans-serif; font-weight: 700; font-size: 1rem;
+    color: var(--ink); text-decoration: none;
+  }
+  .wordmark .mark {
+    width: 20px; height: 20px; border: 1.5px solid var(--accent); border-radius: 3px;
+    display: grid; place-items: center; color: var(--accent); font-size: 11px; font-weight: 600;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .topbar-links { display: flex; align-items: center; gap: clamp(1rem, 3vw, 1.75rem); }
+  .topbar-links a:not(.topbar-cta) { color: var(--ink-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+  .topbar-links a:not(.topbar-cta):hover { color: var(--ink); }
+  .topbar-cta {
+    background: var(--accent); color: var(--accent-ink); padding: 0.5rem 1rem;
+    border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; text-decoration: none;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .topbar-cta:hover { background: var(--accent-strong); }
+  .topbar-cta:active { transform: translateY(1px); }
+
+  /* --- Hero --- */
+  .hero {
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(2rem, 5vw, 4rem);
+    align-items: center; padding: clamp(3rem, 8vw, 5.5rem) 0 clamp(3.5rem, 8vw, 6rem);
+  }
+  .hero-copy h1 {
+    font-size: clamp(2.2rem, 4.6vw, 3.55rem); font-weight: 700; line-height: 1.08;
+  }
+  .hero-copy p {
+    margin: 1.2rem 0 0; font-size: 1.08rem; color: var(--ink-muted); max-width: 46ch;
+  }
+  .hero-actions { display: flex; align-items: center; gap: 1.5rem; margin-top: 1.9rem; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius);
+    padding: 0.85rem 1.5rem; font-size: 0.95rem; font-weight: 600; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-primary:active { transform: translateY(1px); }
+  .link-secondary {
+    color: var(--ink-muted); text-decoration: none; font-size: 0.92rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 0.4rem; border-bottom: 1px solid var(--border);
+    padding-bottom: 0.15rem; transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .link-secondary:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* code panel with crop-mark corners */
+  .code-frame { position: relative; padding: 14px; }
+  .crop { position: absolute; width: 14px; height: 14px; }
+  .crop::before, .crop::after { content: ""; position: absolute; background: var(--ink-faint); }
+  .crop::before { width: 100%; height: 1px; top: 50%; }
+  .crop::after { width: 1px; height: 100%; left: 50%; }
+  .crop.tl { top: 0; left: 0; } .crop.tr { top: 0; right: 0; }
+  .crop.bl { bottom: 0; left: 0; } .crop.br { bottom: 0; right: 0; }
+
+  .code-stack { display: flex; flex-direction: column; gap: 0.9rem; }
+  .code-card {
+    background: var(--code-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid color-mix(in srgb, var(--code-ink) 12%, transparent);
+    overflow: hidden;
+  }
+  .code-card-label {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--code-accent); padding: 0.7rem 1rem 0;
+  }
+  .code-card pre {
+    margin: 0; padding: 0.5rem 1rem 1rem; color: var(--code-ink); font-size: 0.82rem; line-height: 1.6;
+    overflow-x: auto; background: transparent;
+  }
+  .tok-key { color: var(--code-accent); }
+  .tok-str { color: #9fd9a8; }
+  .tok-com { color: #8a8378; }
+
+  /* --- Sections --- */
+  section { padding: clamp(3rem, 7vw, 5.5rem) 0; }
+  section + section { border-top: 1px solid var(--border); }
+  .section-head { max-width: 52ch; margin-bottom: clamp(2rem, 4vw, 2.75rem); }
+  .section-head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; }
+  .section-head p { margin: 0.75rem 0 0; color: var(--ink-muted); font-size: 1.02rem; }
+
+  /* endpoints bento */
+  .bento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border);
+           border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .bento-cell { background: var(--surface); padding: 1.75rem; }
+  .bento-cell.tint { background: var(--accent-wash); }
+  .bento-cell.sunken { background: var(--surface-sunken); }
+  .bento-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+  .bento-method {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600;
+    padding: 0.15rem 0.45rem; border-radius: 3px; background: var(--accent); color: var(--accent-ink);
+  }
+  .bento-path { font-family: "IBM Plex Mono", monospace; font-size: 0.82rem; color: var(--ink-muted); }
+  .bento-cell h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .bento-cell p { margin: 0 0 0.9rem; color: var(--ink-muted); font-size: 0.94rem; }
+  .bento-cell code {
+    display: block; font-size: 0.78rem; color: var(--ink-faint); background: none; padding: 0;
+    white-space: nowrap; overflow-x: auto;
+  }
+
+  /* response format */
+  .format-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 3.5rem); align-items: start; }
+  .format-grid p { color: var(--ink-muted); max-width: 46ch; }
+  .format-grid p + p { margin-top: 0.9rem; }
+  .format-code { background: var(--code-bg); border-radius: var(--radius); padding: 1.25rem 1.4rem;
+                 box-shadow: var(--shadow); border: 1px solid color-mix(in srgb, var(--code-ink) 12%, transparent); }
+  .format-code pre { margin: 0; color: var(--code-ink); font-size: 0.85rem; line-height: 1.75; }
+  .format-code pre + pre { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px dashed color-mix(in srgb, var(--code-ink) 16%, transparent); }
+
+  /* why section */
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .why-item h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .why-item p { margin: 0; color: var(--ink-muted); font-size: 0.94rem; }
+
+  /* pricing */
+  .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+  .plan {
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    padding: 1.6rem 1.4rem; display: flex; flex-direction: column; gap: 1.1rem;
+  }
+  .plan.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); position: relative; }
+  .plan-tag {
+    position: absolute; top: -0.7rem; left: 1.4rem; background: var(--accent); color: var(--accent-ink);
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; padding: 0.2rem 0.55rem; border-radius: 3px;
+  }
+  .plan h3 { font-size: 1rem; font-weight: 600; color: var(--ink-muted); }
+  .plan .price { font-family: "Sora", sans-serif; font-size: 1.9rem; font-weight: 700; }
+  .plan .price span { font-family: "Public Sans", sans-serif; font-size: 0.9rem; font-weight: 500; color: var(--ink-muted); }
+  .plan .quota { font-family: "IBM Plex Mono", monospace; font-size: 0.85rem; color: var(--ink-muted); }
+  .plan-cta {
+    margin-top: auto; text-align: center; padding: 0.65rem; border-radius: var(--radius);
+    font-size: 0.88rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--ink);
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .plan.featured .plan-cta { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .plan-cta:hover { border-color: var(--accent); color: var(--accent); }
+  .plan.featured .plan-cta:hover { background: var(--accent-strong); color: var(--accent-ink); }
+  .pricing-note { margin-top: 1.5rem; font-size: 0.88rem; color: var(--ink-faint); }
+
+  /* faq */
+  .faq { max-width: 68ch; }
+  .faq-item { padding: 1.25rem 0; border-top: 1px solid var(--border); }
+  .faq-item:first-child { border-top: none; padding-top: 0; }
+  .faq-item h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .faq-item p { margin: 0; color: var(--ink-muted); font-size: 0.95rem; }
+
+  /* final cta */
+  .final-cta { text-align: left; }
+  .final-cta-inner {
+    display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
+    border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(1.75rem, 4vw, 2.5rem);
+    background: var(--surface);
+  }
+  .final-cta-inner h2 { font-size: clamp(1.4rem, 2.6vw, 1.85rem); font-weight: 700; max-width: 30ch; }
+
+  footer { padding: 2.25rem 0 3rem; }
+  .footer-inner {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    font-size: 0.85rem; color: var(--ink-faint);
+  }
+  .footer-inner a { color: var(--ink-faint); }
+  .footer-inner a:hover { color: var(--accent); }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; }
+    .bento { grid-template-columns: 1fr; }
+    .format-grid { grid-template-columns: 1fr; }
+    .why-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr 1fr; }
+    .final-cta-inner { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .pricing-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<header class="topbar">
+  <a href="#top" class="wordmark"><span class="mark">P</span>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="#endpoints">Endpoints</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://pdf-toolkit-api.fly.dev/docs">Docs</a>
+    <a href="https://pdf-toolkit-api.fly.dev/docs#quickstart" class="topbar-cta">Get started</a>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="wrap">
+    <section class="hero" id="top" style="border-top:none;">
+      <div class="hero-copy">
+        <h1>Four PDF operations.<br>One clean API.</h1>
+        <p>Send a file, get a file back. No SDKs, no dashboards, no signed URLs to manage. Just HTTP and PDFs.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+          <a class="link-secondary" href="#endpoints">See the 4 endpoints</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="code-frame">
+          <span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span>
+          <div class="code-stack">
+            <div class="code-card">
+              <div class="code-card-label">Request</div>
+              <pre>curl -H <span class="tok-str">"x-api-key: $KEY"</span> \
+  -F <span class="tok-str">"files=@a.pdf"</span> -F <span class="tok-str">"files=@b.pdf"</span> \
+  https://pdf-toolkit-api.fly.dev/v1/merge -o merged.pdf</pre>
+            </div>
+            <div class="code-card">
+              <div class="code-card-label">Response</div>
+              <pre>{ <span class="tok-key">"code"</span>: 200, <span class="tok-key">"status"</span>: <span class="tok-str">"success"</span>,
+  <span class="tok-key">"data"</span>: { <span class="tok-key">"remaining"</span>: 97 } }</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="endpoints">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Four operations, nothing else</h2>
+        <p>The whole surface area of the API. Each one takes a PDF, does one job, and hands a file back.</p>
+      </div>
+      <div class="bento reveal">
+        <div class="bento-cell tint">
+          <div class="bento-head"><span class="bento-method">POST</span><span class="bento-path">/v1/merge</span></div>
+          <h3>Merge</h3>
+          <p>Combine two or more PDFs, in order, into one file.</p>
+          <code>-F files=@a.pdf -F files=@b.pdf</code>
+        </div>
+        <div class="bento-cell sunken">
+          <div class="bento-head"><span class="bento-method">POST</span><span class="bento-path">/v1/split</span></div>
+          <h3>Split</h3>
+          <p>Pull specific pages out, or explode every page into its own file.</p>
+          <code>-F file=@doc.pdf -F ranges=1-3,5</code>
+        </div>
+        <div class="bento-cell sunken">
+          <div class="bento-head"><span class="bento-method">POST</span><span class="bento-path">/v1/compress</span></div>
+          <h3>Compress</h3>
+          <p>Re-save with object streams enabled to shrink the file size.</p>
+          <code>-F file=@doc.pdf</code>
+        </div>
+        <div class="bento-cell">
+          <div class="bento-head"><span class="bento-method">POST</span><span class="bento-path">/v1/pdf-to-image</span></div>
+          <h3>PDF to image</h3>
+          <p>Rasterize any page to PNG or JPEG at the scale you need.</p>
+          <code>-F file=@doc.pdf -F format=png</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="response-format">
+    <div class="wrap format-grid">
+      <div class="section-head reveal" style="margin-bottom:0;">
+        <h2>Predictable responses</h2>
+        <p>The four file endpoints hand back raw bytes on success, so a plain <code style="background:var(--surface-sunken);border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.35rem;">curl -o file.pdf</code> just works.</p>
+        <p>Everything else, health checks, usage, and every error, uses one JSON envelope. No guessing which shape you get back.</p>
+      </div>
+      <div class="format-code reveal">
+        <pre>{ <span class="tok-key">"code"</span>: 200, <span class="tok-key">"status"</span>: <span class="tok-str">"success"</span>,
+  <span class="tok-key">"data"</span>: { <span class="tok-key">"plan"</span>: <span class="tok-str">"free"</span>, <span class="tok-key">"remaining"</span>: 88 } }</pre>
+        <pre>{ <span class="tok-key">"code"</span>: 429, <span class="tok-key">"status"</span>: <span class="tok-str">"error"</span>,
+  <span class="tok-key">"data"</span>: { <span class="tok-key">"error"</span>: <span class="tok-str">"Monthly quota exceeded"</span> } }</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Why this instead of a general document platform</h2>
+        <p>Most PDF APIs are priced and scoped for document platforms with dozens of operations. This is scoped for the four things people actually reach for an API to do.</p>
+      </div>
+      <div class="why-grid reveal">
+        <div class="why-item">
+          <h3>Transparent pricing</h3>
+          <p>A flat monthly fee per tier plus $0.002 per operation past your quota. No credit systems, no "contact sales" for volume.</p>
+        </div>
+        <div class="why-item">
+          <h3>One response shape</h3>
+          <p>File endpoints return raw bytes. Everything else is the same JSON envelope, always. No per-endpoint guessing.</p>
+        </div>
+        <div class="why-item">
+          <h3>No lock-in surface</h3>
+          <p>Four stateless HTTP endpoints. No SDK to adopt, no proprietary dashboard your integration depends on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Pricing</h2>
+        <p>Pick a tier by monthly volume. Overage beyond your tier bills at $0.002 per operation.</p>
+      </div>
+      <div class="pricing-grid reveal">
+        <div class="plan">
+          <h3>Free</h3>
+          <div class="price">$0</div>
+          <div class="quota">100 ops / month</div>
+          <a class="plan-cta" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+        </div>
+        <div class="plan">
+          <h3>Starter</h3>
+          <div class="price">$9<span>/mo</span></div>
+          <div class="quota">2,000 ops / month</div>
+          <a class="plan-cta" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+        </div>
+        <div class="plan featured">
+          <span class="plan-tag">Popular</span>
+          <h3>Pro</h3>
+          <div class="price">$29<span>/mo</span></div>
+          <div class="quota">10,000 ops / month</div>
+          <a class="plan-cta" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+        </div>
+        <div class="plan">
+          <h3>Scale</h3>
+          <div class="price">$99<span>/mo</span></div>
+          <div class="quota">50,000 ops / month</div>
+          <a class="plan-cta" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+        </div>
+      </div>
+      <p class="pricing-note">Every tier shares the same 4 endpoints. Higher tiers only change the monthly quota.</p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>Questions</h2>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-item">
+          <h3>Is there a free tier?</h3>
+          <p>Yes. 100 operations per month, no credit card required.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What operations does the API support?</h3>
+          <p>Merge, split, compress, and rasterize to image. That's the whole surface area, deliberately.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What happens when I exceed my plan's quota?</h3>
+          <p>Paid plans bill $0.002 per operation beyond the included quota, automatically. Free-plan requests past the quota are rejected with a 429 until the next calendar month.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Does it support OCR or e-signing?</h3>
+          <p>No. The API is scoped to four operations on purpose, not a general document platform.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What format does the API return?</h3>
+          <p>The four file endpoints return raw bytes directly. Everything else uses one JSON envelope: <code style="background:var(--surface-sunken);border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.35rem;">{ code, status, data }</code>.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Is there a Node.js or Python SDK?</h3>
+          <p>No SDK needed. It's plain REST over HTTP; the docs show curl examples that work from any language with an HTTP client.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <div class="wrap">
+      <div class="final-cta-inner reveal">
+        <h2>Send a request, get a file back.</h2>
+        <a class="btn-primary" href="https://pdf-toolkit-api.fly.dev/docs#quickstart">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <span>PDF Toolkit API</span>
+      <a href="https://pdf-toolkit-api.fly.dev/docs">Docs</a>
+    </div>
+  </footer>
+</main>
+
+<script>
+  var els = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    els.forEach(function (el) { io.observe(el); });
+  } else {
+    els.forEach(function (el) { el.classList.add("in"); });
+  }
+</script>
+</body>
+</html>

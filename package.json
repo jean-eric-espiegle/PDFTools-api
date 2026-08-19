@@ -1,0 +1,46 @@
+{
+  "name": "pdf-toolkit-api",
+  "version": "0.1.0",
+  "description": "PDF Toolkit API MVP - merge, split, compress, pdf-to-image",
+  "private": true,
+  "type": "module",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/index.js",
+    "create-key": "tsx scripts/create-key.ts",
+    "create-key:prod": "node dist/scripts/create-key.js",
+    "setup-stripe-products": "tsx scripts/setup-stripe-products.ts",
+    "setup-stripe-products:prod": "node dist/scripts/setup-stripe-products.js",
+    "read-outbox": "tsx scripts/read-outbox.ts",
+    "read-outbox:prod": "node dist/scripts/read-outbox.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.53",
+    "archiver": "^7.0.1",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "multer": "^2.0.1",
+    "nanoid": "^5.0.7",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.6.82",
+    "resend": "^6.20.0",
+    "stripe": "^22.5.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.14.15",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}

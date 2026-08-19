@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PDF Toolkit API Docs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="API reference for the PDF Toolkit API: authentication, response format, account management, and all four endpoints (merge, split, compress, pdf-to-image) with curl examples.">
+<link rel="canonical" href="https://pdf-toolkit-api.fly.dev/docs">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="PDF Toolkit API Docs">
+<meta property="og:description" content="API reference for the PDF Toolkit API: authentication, response format, account management, and all four endpoints with curl examples.">
+<meta property="og:url" content="https://pdf-toolkit-api.fly.dev/docs">
+<meta property="og:image" content="https://pdf-toolkit-api.fly.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PDF Toolkit API Docs">
+<meta name="twitter:description" content="API reference for the PDF Toolkit API: authentication, response format, account management, and all four endpoints with curl examples.">
+<meta name="twitter:image" content="https://pdf-toolkit-api.fly.dev/og-image.png">
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "PDF Toolkit API Documentation",
+  "url": "https://pdf-toolkit-api.fly.dev/docs",
+  "about": { "@type": "SoftwareApplication", "name": "PDF Toolkit API", "url": "https://pdf-toolkit-api.fly.dev/" }
+}
+</script>
+
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --surface-sunken: #f2efe8;
+    --ink: #18140f;
+    --ink-muted: #6b6459;
+    --ink-faint: #9b9384;
+    --border: #e7e2d9;
+    --accent: #c43b24;
+    --accent-strong: #a8331f;
+    --accent-ink: #fff8f3;
+    --code-bg: #18140f;
+    --code-ink: #f2eee6;
+    --code-accent: #ff9270;
+    --shadow: 0 1px 2px rgb(24 20 15 / 0.04), 0 8px 24px rgb(24 20 15 / 0.05);
+    --radius: 4px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f;
+      --surface: #1f1b15;
+      --surface-sunken: #241f18;
+      --ink: #f2eee6;
+      --ink-muted: #b0a89a;
+      --ink-faint: #756e60;
+      --border: #332e26;
+      --accent: #ff6a47;
+      --accent-strong: #ff8264;
+      --accent-ink: #1a0d08;
+      --code-bg: #100d09;
+      --code-ink: #f2eee6;
+      --code-accent: #ff9270;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f;
+    --surface: #1f1b15;
+    --surface-sunken: #241f18;
+    --ink: #f2eee6;
+    --ink-muted: #b0a89a;
+    --ink-faint: #756e60;
+    --border: #332e26;
+    --accent: #ff6a47;
+    --accent-strong: #ff8264;
+    --accent-ink: #1a0d08;
+    --code-bg: #100d09;
+    --code-ink: #f2eee6;
+    --code-accent: #ff9270;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; text-wrap: balance; margin: 0; }
+  code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; background: var(--accent); color: var(--accent-ink);
+    padding: 0.6rem 1rem; z-index: 100; border-radius: var(--radius);
+  }
+  .skip-link:focus { left: 1rem; top: 1rem; }
+
+  /* --- Top bar --- */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-family: "Sora", sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: -0.01em;
+    color: var(--ink); text-decoration: none;
+  }
+  .wordmark .mark {
+    width: 20px; height: 20px; border: 1.5px solid var(--accent); border-radius: 3px;
+    display: grid; place-items: center; color: var(--accent); font-size: 11px; font-weight: 600;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .topbar-links { display: flex; align-items: center; gap: clamp(1rem, 3vw, 1.75rem); }
+  .topbar-links a { color: var(--ink-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+  .topbar-links a:hover { color: var(--ink); }
+  .topbar-links a.current { color: var(--accent); }
+  .topbar-cta {
+    background: var(--accent); color: var(--accent-ink); padding: 0.5rem 1rem;
+    border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  .topbar-cta:hover { background: var(--accent-strong); }
+
+  /* --- Docs shell --- */
+  .shell {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem);
+    padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem) 6rem;
+  }
+  .toc {
+    position: sticky; top: 88px; align-self: start;
+    max-height: calc(100dvh - 110px); overflow-y: auto;
+    display: flex; flex-direction: column; gap: 1.5rem;
+    padding-right: 0.5rem;
+  }
+  .toc-group h3 {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; font-weight: 500; margin-bottom: 0.6rem;
+  }
+  .toc-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .toc-group a {
+    display: block; color: var(--ink-muted); text-decoration: none; font-size: 0.9rem;
+    padding: 0.2rem 0; border-left: 2px solid transparent; padding-left: 0.7rem; margin-left: -0.7rem;
+    transition: color 0.12s ease, border-color 0.12s ease;
+  }
+  .toc-group a:hover { color: var(--ink); }
+  .toc-group a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+  main { min-width: 0; }
+  .doc-section { padding-top: clamp(2.5rem, 5vw, 3.5rem); scroll-margin-top: 90px; }
+  .doc-section:first-child { padding-top: 0.5rem; }
+  .doc-section + .doc-section { border-top: 1px solid var(--border); }
+  .doc-section h2 {
+    font-size: clamp(1.5rem, 2.4vw, 1.9rem); font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.9rem;
+  }
+  .doc-section h3 {
+    font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.6rem;
+  }
+  .doc-section p { color: var(--ink-muted); max-width: 65ch; margin: 0 0 1rem; }
+  .doc-section p:last-child { margin-bottom: 0; }
+  .lede { font-size: 1.05rem; color: var(--ink); max-width: 60ch; }
+
+  .method-path {
+    display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.1rem;
+  }
+  .method-tag {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; font-weight: 600;
+    padding: 0.18rem 0.5rem; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink);
+  }
+  .method-tag.get { background: var(--surface-sunken); color: var(--ink-muted); border: 1px solid var(--border); }
+  .path-tag { font-family: "IBM Plex Mono", monospace; font-size: 0.9rem; color: var(--ink); }
+
+  pre {
+    background: var(--code-bg); color: var(--code-ink); border-radius: var(--radius);
+    padding: 1rem 1.15rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.65;
+    margin: 0 0 1rem; border: 1px solid color-mix(in srgb, var(--code-ink) 12%, transparent);
+  }
+  pre .tok-key { color: var(--code-accent); }
+  pre .tok-str { color: #9fd9a8; }
+  pre .tok-com { color: #8a8378; }
+  code:not(pre code) {
+    background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 3px;
+    padding: 0.1rem 0.35rem; font-size: 0.85em;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 1.1rem; font-size: 0.9rem; }
+  th { text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; text-transform: uppercase;
+       letter-spacing: 0.06em; color: var(--ink-faint); font-weight: 500; padding: 0 0.75rem 0.6rem 0; }
+  td { padding: 0.65rem 0.75rem 0.65rem 0; border-top: 1px solid var(--border); color: var(--ink-muted); vertical-align: top; }
+  td:first-child, th:first-child { padding-left: 0; }
+  td code { white-space: nowrap; }
+  .req { color: var(--accent); font-size: 0.75rem; font-weight: 600; font-family: "IBM Plex Mono", monospace; }
+
+  .callout {
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    background: var(--surface); border-radius: var(--radius);
+    padding: 0.9rem 1.1rem; margin: 0 0 1.1rem; font-size: 0.9rem; color: var(--ink-muted);
+  }
+  .callout strong { color: var(--ink); }
+
+  .status-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1.25rem; margin-bottom: 1rem; }
+  .status-grid .code { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--accent); }
+  .status-grid dt, .status-grid dd { margin: 0; }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem clamp(1.25rem, 4vw, 2.5rem);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    font-size: 0.85rem; color: var(--ink-faint);
+  }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .toc {
+      position: static; max-height: none; flex-direction: row; flex-wrap: wrap; gap: 0.4rem 1rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;
+    }
+    .toc-group { display: contents; }
+    .toc-group h3 { display: none; }
+    .toc-group ul { flex-direction: row; flex-wrap: wrap; gap: 0.4rem 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
+  }
+  h1.visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+<h1 class="visually-hidden">PDF Toolkit API Documentation</h1>
+
+<header class="topbar">
+  <a href="https://pdf-toolkit-api.fly.dev" class="wordmark"><span class="mark">P</span>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="https://pdf-toolkit-api.fly.dev">Overview</a>
+    <a href="#" class="current">Docs</a>
+    <a href="#quickstart" class="topbar-cta">Get an API key</a>
+  </nav>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-group">
+      <h3>Start</h3>
+      <ul>
+        <li><a href="#quickstart" class="toc-link">Quickstart</a></li>
+        <li><a href="#account" class="toc-link">Account</a></li>
+        <li><a href="#auth" class="toc-link">API key authentication</a></li>
+        <li><a href="#responses" class="toc-link">Response format</a></li>
+      </ul>
+    </div>
+    <div class="toc-group">
+      <h3>Endpoints</h3>
+      <ul>
+        <li><a href="#merge" class="toc-link">Merge</a></li>
+        <li><a href="#split" class="toc-link">Split</a></li>
+        <li><a href="#compress" class="toc-link">Compress</a></li>
+        <li><a href="#pdf-to-image" class="toc-link">PDF to image</a></li>
+        <li><a href="#usage" class="toc-link">Usage</a></li>
+      </ul>
+    </div>
+    <div class="toc-group">
+      <h3>Reference</h3>
+      <ul>
+        <li><a href="#errors" class="toc-link">Errors</a></li>
+        <li><a href="#limits" class="toc-link">Rate limits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main">
+    <section class="doc-section" id="quickstart">
+      <h2>Quickstart</h2>
+      <p class="lede">Four HTTP endpoints for working with PDFs. Send a file, get a file back. No SDK to install.</p>
+
+      <h3>1. Create an account</h3>
+      <p>Register with an email and password. This returns a session token immediately, so you don't need to confirm your email before continuing to the next steps.</p>
+      <pre>curl -X POST https://pdf-toolkit-api.fly.dev/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"at-least-8-chars"}'</pre>
+
+      <h3>2. Confirm your email</h3>
+      <p>Click the confirmation link we send you. A confirmed email is required before you can create an API key.</p>
+
+      <h3>3. Create a key</h3>
+      <pre>curl -X POST https://pdf-toolkit-api.fly.dev/auth/api-keys \
+  -H "Authorization: Bearer $SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my app"}'</pre>
+
+      <h3>4. Make a request</h3>
+      <p>Every request to <code>/v1</code> needs the <code>x-api-key</code> from step 3, not the session token. Uploads are <code>multipart/form-data</code>.</p>
+      <pre>curl -H "x-api-key: $KEY" \
+  -F "files=@a.pdf" -F "files=@b.pdf" \
+  https://pdf-toolkit-api.fly.dev/v1/merge -o merged.pdf</pre>
+    </section>
+
+    <section class="doc-section" id="account">
+      <h2>Account</h2>
+      <p>Everything above is under <code>/auth</code>, authenticated with a session token (<code>Authorization: Bearer ...</code>), separate from the <code>x-api-key</code> used for the PDF endpoints. A few more account endpoints:</p>
+
+      <h3>Login</h3>
+      <pre>curl -X POST https://pdf-toolkit-api.fly.dev/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"..."}'</pre>
+      <p>Returns a session token directly, or <code>{"twoFactorRequired":true,"pendingId":"..."}</code> if you've enabled 2FA on the account. Submit the emailed code with <code>POST /auth/login/2fa {pendingId, code}</code> to get your session token.</p>
+
+      <h3>Two-factor authentication</h3>
+      <p>Off by default. Toggle with <code>POST /auth/2fa/enable</code> / <code>POST /auth/2fa/disable</code> (session-authenticated). When enabled, login emails a 6-digit code that expires in 10 minutes.</p>
+
+      <h3>Forgot your password?</h3>
+      <pre>curl -X POST https://pdf-toolkit-api.fly.dev/auth/forgot-password \
+  -H "Content-Type: application/json" -d '{"email":"you@example.com"}'</pre>
+      <p>Emails a reset link if the address is registered. <code>POST /auth/reset-password {token, newPassword}</code> completes it and signs you out everywhere else.</p>
+    </section>
+
+    <section class="doc-section" id="auth">
+      <h2>API key authentication</h2>
+      <p>Pass your key as <code>x-api-key</code> on every request under <code>/v1</code>. Missing or invalid keys get a <code>401</code>.</p>
+      <p>Each key carries a monthly request quota. Requests past the quota get a <code>429</code> until the calendar month rolls over.</p>
+    </section>
+
+    <section class="doc-section" id="responses">
+      <h2>Response format</h2>
+      <p><code>merge</code>, <code>split</code>, <code>compress</code>, and <code>pdf-to-image</code> return the file itself as raw bytes on success, <code>application/pdf</code>, <code>image/png</code>, or <code>application/zip</code>. That is the actual product, so a plain <code>curl -o file.pdf</code> works with no decoding step.</p>
+      <p>Everything else, health checks, usage, and every error, uses one JSON envelope:</p>
+      <pre>{ <span class="tok-key">"code"</span>: 200, <span class="tok-key">"status"</span>: <span class="tok-str">"success"</span>, <span class="tok-key">"data"</span>: { ... } }
+{ <span class="tok-key">"code"</span>: 400, <span class="tok-key">"status"</span>: <span class="tok-str">"error"</span>, <span class="tok-key">"data"</span>: { <span class="tok-key">"error"</span>: <span class="tok-str">"Upload a PDF file under the 'file' field"</span> } }</pre>
+    </section>
+
+    <section class="doc-section" id="merge">
+      <h2>Merge</h2>
+      <div class="method-path"><span class="method-tag">POST</span><span class="path-tag">/v1/merge</span></div>
+      <p>Combines 2 or more PDFs, in the order they're sent, into one PDF.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>files</code></td><td>file[]</td><td><span class="req">required</span>, 2 to 20 files</td></tr>
+      </table>
+      <pre>curl -H "x-api-key: $KEY" \
+  -F "files=@a.pdf" -F "files=@b.pdf" \
+  https://pdf-toolkit-api.fly.dev/v1/merge -o merged.pdf</pre>
+      <p>Returns <code>application/pdf</code>.</p>
+    </section>
+
+    <section class="doc-section" id="split">
+      <h2>Split</h2>
+      <div class="method-path"><span class="method-tag">POST</span><span class="path-tag">/v1/split</span></div>
+      <p>Splits a PDF. Without <code>ranges</code>, returns one PDF per page, zipped. With <code>ranges</code>, extracts just those pages into a single PDF.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>file</code></td><td>file</td><td><span class="req">required</span></td></tr>
+        <tr><td><code>ranges</code></td><td>string</td><td>optional, e.g. <code>1-3,5</code></td></tr>
+      </table>
+      <pre><span class="tok-com"># one PDF per page, zipped</span>
+curl -H "x-api-key: $KEY" -F "file=@doc.pdf" https://pdf-toolkit-api.fly.dev/v1/split -o pages.zip
+
+<span class="tok-com"># just pages 1-3 and 5</span>
+curl -H "x-api-key: $KEY" -F "file=@doc.pdf" -F "ranges=1-3,5" \
+  https://pdf-toolkit-api.fly.dev/v1/split -o excerpt.pdf</pre>
+      <p>Returns <code>application/pdf</code> for a single-range extract, <code>application/zip</code> otherwise.</p>
+    </section>
+
+    <section class="doc-section" id="compress">
+      <h2>Compress</h2>
+      <div class="method-path"><span class="method-tag">POST</span><span class="path-tag">/v1/compress</span></div>
+      <p>Re-saves the PDF with object streams enabled, deduping shared objects and compressing cross-reference data. A real but modest reduction, deep image recompression is on the roadmap.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>file</code></td><td>file</td><td><span class="req">required</span></td></tr>
+      </table>
+      <pre>curl -H "x-api-key: $KEY" -F "file=@doc.pdf" \
+  https://pdf-toolkit-api.fly.dev/v1/compress -o compressed.pdf</pre>
+      <p>Returns <code>application/pdf</code>. Response headers <code>X-Original-Size-Bytes</code> and <code>X-Compressed-Size-Bytes</code> report the before and after size.</p>
+    </section>
+
+    <section class="doc-section" id="pdf-to-image">
+      <h2>PDF to image</h2>
+      <div class="method-path"><span class="method-tag">POST</span><span class="path-tag">/v1/pdf-to-image</span></div>
+      <p>Rasterizes pages to PNG or JPEG.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>file</code></td><td>file</td><td><span class="req">required</span></td></tr>
+        <tr><td><code>format</code></td><td>string</td><td>optional, <code>png</code> (default) or <code>jpeg</code></td></tr>
+        <tr><td><code>ranges</code></td><td>string</td><td>optional, same syntax as split</td></tr>
+        <tr><td><code>scale</code></td><td>number</td><td>optional, default <code>2.0</code>, roughly 144 DPI</td></tr>
+      </table>
+      <pre>curl -H "x-api-key: $KEY" -F "file=@doc.pdf" -F "ranges=1" \
+  https://pdf-toolkit-api.fly.dev/v1/pdf-to-image -o page1.png</pre>
+      <p>Returns a single image if one page is requested, <code>application/zip</code> for more than one.</p>
+    </section>
+
+    <section class="doc-section" id="usage">
+      <h2>Usage</h2>
+      <div class="method-path"><span class="method-tag get">GET</span><span class="path-tag">/v1/usage</span></div>
+      <p>Current month's usage against your key's quota.</p>
+      <pre>curl -H "x-api-key: $KEY" https://pdf-toolkit-api.fly.dev/v1/usage
+
+<span class="tok-com"># {"code":200,"status":"success","data":{"plan":"free","monthlyLimit":100,"usedThisMonth":12,"remaining":88}}</span></pre>
+    </section>
+
+    <section class="doc-section" id="errors">
+      <h2>Errors</h2>
+      <p>Every error uses the response envelope above with a matching HTTP status.</p>
+      <dl class="status-grid">
+        <dt class="code">400</dt><dd>Missing files, malformed page ranges, or an upload that isn't a valid PDF.</dd>
+        <dt class="code">401</dt><dd>Missing, invalid, or revoked <code>x-api-key</code>.</dd>
+        <dt class="code">422</dt><dd>The PDF couldn't be rendered to an image.</dd>
+        <dt class="code">429</dt><dd>Monthly quota exceeded for this key.</dd>
+        <dt class="code">500</dt><dd>Something broke server side.</dd>
+      </dl>
+    </section>
+
+    <section class="doc-section" id="limits">
+      <h2>Rate limits</h2>
+      <p>Two limits apply independently: your key's monthly quota (set per key, <code>100</code>/month on the free plan), and a flat <code>60</code> requests per minute per IP address as an abuse backstop.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <span>PDF Toolkit API</span>
+  <span>Built as the first release from a microservices brainstorm.</span>
+</footer>
+
+<script>
+  var links = document.querySelectorAll(".toc-link");
+  var linkForSection = {};
+  links.forEach(function (a) {
+    linkForSection[a.getAttribute("href").slice(1)] = a;
+  });
+
+  var observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        var link = linkForSection[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove("active"); });
+          link.classList.add("active");
+        }
+      });
+    },
+    { rootMargin: "-15% 0px -70% 0px", threshold: 0 }
+  );
+
+  document.querySelectorAll(".doc-section[id]").forEach(function (sec) {
+    observer.observe(sec);
+  });
+  if (links[0]) links[0].classList.add("active");
+</script>
+</body>
+</html>
