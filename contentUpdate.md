@@ -24,23 +24,11 @@ The original brainstorm doc's own SEO plan called for exactly this ("PDFShift al
 
 ## 🟡 Medium priority (UX/content) — not yet addressed
 
-### Primary CTA dumps every visitor into raw curl commands
-"Get started" (appears 6 times across the landing page) goes straight to `/docs#quickstart` — 100% curl/JSON examples, no web form. Anyone not comfortable in a terminal bounces immediately. This is a real conversion problem, not just a docs gap: the button promises "get started" but delivers "read technical documentation." (Building an actual web signup form is a bigger scope question — flagging the mismatch here, not prescribing the fix.)
-
-### No lead capture for not-ready-yet visitors
-No email signup, no "notify me." Given the promotion plan is slow/organic (SEO, community answers, one-shot launches), most first-time visitors won't convert same-day. Right now that traffic is just gone rather than nurtured.
-
 ### No social proof section
 Deliberate and correct as of today — there are no real customers yet, so fabricating testimonials/logos would be dishonest, and the site correctly doesn't. Flagging this as a "the moment you have 2-3 real users, add this" item, not a current defect.
 
-### Stale, internal-sounding footer copy on the docs page
-`"Built as the first release from a microservices brainstorm."` — reads like a leaked planning note, not customer-facing copy. A real visitor has no context for what "a microservices brainstorm" means and it undercuts the professional tone the rest of the page works hard for. Replace with something normal (a copyright line, or nothing).
-
 ### No "copy" button on code blocks
 Every curl/JSON example requires manual select-and-copy. Minor, but it's a near-universal convention on modern docs sites at this point and its absence is noticeable.
-
-### Pricing tier buttons don't reflect the tier clicked
-All four plan cards' CTAs say "Get started" and go to the identical `/docs#quickstart` regardless of which plan was clicked — someone clicking "Scale ($99/mo)" lands on the same generic quickstart as someone clicking "Free," with no plan context carried through. Minor, but slightly misleading given the buttons visually imply "start this plan."
 
 ---
 
@@ -51,8 +39,16 @@ Verified via response headers on both pages. Every repeat visit revalidates with
 
 ---
 
+## Fixed (commit TBD — lead capture, plan-context signup, footer branding)
+
+- **Lead capture**: `POST /subscribers` (new `subscribers` table, storage only, no campaign-sending system built on top yet) + a quiet capture band on the landing page between the final CTA and the footer, labeled "Not ready yet? Get updates" so it can't be confused with the primary "Get started" intent.
+- **Pricing tier buttons carry plan context**: paid-tier CTAs now link to `/register?plan=starter|pro|scale`; the register page stores the intent in `localStorage`, and the dashboard prompts "Subscribe to {plan}?" once the account's email is confirmed (can't auto-subscribe immediately since email verification is async via the emailed link). The intended plan's card is also visually highlighted in Billing.
+- **Footer branding**: both pages now credit Rune Tech (`rune-tech.org`) as the parent company. Docs page's stale "built from a microservices brainstorm" line replaced with "an arcane tech company."
+
 ## Fixed (for reference — commit `d72877b`)
 
 **Critical:** HTML document skeleton (doctype/html/head/body) on both pages · viewport meta tag · meta descriptions · Open Graph + Twitter Card tags with a generated 1200×630 OG image (`site/og-image.png`) · favicon (SVG + PNG, `site/favicon.svg` + `site/favicon.ico`) · `robots.txt` · `sitemap.xml` · `llms.txt`.
 
 **High priority:** JSON-LD structured data (`SoftwareApplication` + `Offer` ×4 for pricing, `FAQPage`, `TechArticle` on docs) · new FAQ section on the landing page with real Q&A content, paired with the `FAQPage` schema · new "Why this instead of a general document platform" section articulating the actual competitive edges (transparent pricing, one response shape, no lock-in) that existed in the brainstorm doc but never made it onto the site · missing `<h1>` on the docs page (added visually-hidden, to avoid disrupting the dense reference-page layout).
+
+**Medium (fixed as a side effect of the dashboard build, commit `7d94868`):** "Primary CTA dumps every visitor into raw curl commands" — all "Get started" CTAs now point to a real `/register` form instead of `/docs#quickstart`.

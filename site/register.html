@@ -58,6 +58,20 @@
   var alertEl = document.getElementById("alert");
   var submitBtn = document.getElementById("submit-btn");
 
+  // Carry pricing-page plan intent through to the dashboard, which prompts
+  // to subscribe once the account's email is confirmed (can't subscribe
+  // immediately: POST /auth/subscribe requires a verified email, and
+  // confirmation happens async via the emailed link).
+  var VALID_PLANS = ["starter", "pro", "scale"];
+  var intendedPlan = new URLSearchParams(location.search).get("plan");
+  if (intendedPlan && VALID_PLANS.indexOf(intendedPlan) !== -1) {
+    localStorage.setItem("pdftk_intended_plan", intendedPlan);
+    var note = document.createElement("p");
+    note.className = "auth-note";
+    note.textContent = "Signing up for the " + intendedPlan.charAt(0).toUpperCase() + intendedPlan.slice(1) + " plan. You'll subscribe from the dashboard once your email is confirmed.";
+    document.querySelector(".auth-card h1").insertAdjacentElement("afterend", note);
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     Auth.hideAlert(alertEl);

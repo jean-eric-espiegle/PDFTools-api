@@ -30,17 +30,13 @@ import { FREE_TIER_MONTHLY_LIMIT, PUBLIC_BASE_URL } from "../config.js";
 import { requireSession, requireVerifiedEmail } from "../middleware/requireSession.js";
 import { subscribeToPlan, BillingError } from "../lib/billing.js";
 import { isPaidPlan, PLANS } from "../billingPlans.js";
+import { isValidEmail } from "../lib/validation.js";
 
 export const authRouter = Router();
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMAIL_CONFIRM_TTL_MS = 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 const TWOFA_CODE_TTL_MS = 10 * 60 * 1000;
-
-function isValidEmail(email: unknown): email is string {
-  return typeof email === "string" && EMAIL_RE.test(email);
-}
 
 // --- Register -> confirm -> fill profile ---
 

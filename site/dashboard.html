@@ -36,6 +36,7 @@
     border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center;
   }
   .plan-card.current { border-color: var(--accent); }
+  .plan-card.intended { border-style: dashed; border-color: var(--accent); }
   .plan-card .plan-name { font-weight: 700; font-size: 0.95rem; }
   .plan-card .plan-price { font-family: "Sora", sans-serif; font-size: 1.3rem; font-weight: 700; margin: 0.3rem 0; }
   .plan-card .plan-quota { color: var(--ink-muted); font-size: 0.78rem; margin-bottom: 0.75rem; }
@@ -61,6 +62,7 @@
   <div id="content" style="display:none;">
 
     <div class="alert" id="verify-banner" style="display:none;"></div>
+    <div class="alert alert-info" id="plan-intent-banner" style="display:none;"></div>
 
     <div class="card">
       <h2>Account</h2>
@@ -161,6 +163,8 @@
     });
   }
 
+  var INTENDED_PLAN_KEY = "pdftk_intended_plan";
+
   function renderAccount(user) {
     document.getElementById("acct-email").textContent = user.email;
     document.getElementById("acct-verified").textContent = user.emailVerified ? "Yes" : "No";
@@ -176,19 +180,47 @@
     toggleBtn.onclick = function () { toggle2fa(!user.twofaEnabled); };
 
     var banner = document.getElementById("verify-banner");
+    var intendedPlan = localStorage.getItem(INTENDED_PLAN_KEY);
+
     if (!user.emailVerified) {
-      Auth.showAlert(banner, "Confirm your email to create API keys or subscribe to a paid plan. Check your inbox for the confirmation link.", "info");
+      var msg = "Confirm your email to create API keys or subscribe to a paid plan. Check your inbox for the confirmation link.";
+      if (intendedPlan && PLAN_INFO[intendedPlan]) {
+        msg += " Once confirmed, you can subscribe to " + PLAN_INFO[intendedPlan].name + ".";
+      }
+      Auth.showAlert(banner, msg, "info");
+    }
+
+    if (intendedPlan) {
+      if (!PLAN_INFO[intendedPlan] || user.plan === intendedPlan) {
+        // Already on that plan, or a stale/invalid value. Nothing to prompt.
+        localStorage.removeItem(INTENDED_PLAN_KEY);
+      } else if (user.emailVerified) {
+        var planBanner = document.getElementById("plan-intent-banner");
+        planBanner.innerHTML = "";
+        var text = document.createElement("span");
+        text.textContent = "Ready to subscribe to " + PLAN_INFO[intendedPlan].name + "? ";
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn-small";
+        btn.textContent = "Subscribe to " + PLAN_INFO[intendedPlan].name;
+        btn.addEventListener("click", function () { subscribe(intendedPlan); });
+        planBanner.appendChild(text);
+        planBanner.appendChild(btn);
+        planBanner.classList.add("show");
+      }
     }
   }
 
   function renderPlans(user) {
+    var intendedPlan = localStorage.getItem(INTENDED_PLAN_KEY);
     var grid = document.getElementById("plans-grid");
     grid.innerHTML = "";
     ["starter", "pro", "scale"].forEach(function (planId) {
       var info = PLAN_INFO[planId];
       var isCurrent = user.plan === planId;
+      var isIntended = !isCurrent && planId === intendedPlan;
       var div = document.createElement("div");
-      div.className = "plan-card" + (isCurrent ? " current" : "");
+      div.className = "plan-card" + (isCurrent ? " current" : "") + (isIntended ? " intended" : "");
       div.innerHTML =
         '<div class="plan-name">' + info.name + "</div>" +
         '<div class="plan-price">' + info.price + "</div>" +
@@ -255,6 +287,7 @@
         Auth.showAlert(alertEl, res.body.data.error || "Couldn't subscribe. Try again.");
         return;
       }
+      localStorage.removeItem(INTENDED_PLAN_KEY);
       location.reload();
     });
   }

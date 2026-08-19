@@ -14,6 +14,7 @@ import { pdfToImageRouter } from "./routes/pdfToImage.js";
 import { usageRouter } from "./routes/usage.js";
 import { stripeWebhookRouter } from "./routes/stripeWebhook.js";
 import { authRouter } from "./routes/auth.js";
+import { subscribersRouter } from "./routes/subscribers.js";
 import { sendError, sendSuccess } from "./lib/response.js";
 
 const app = express();
@@ -47,6 +48,7 @@ const limiter = rateLimit({ windowMs: 60_000, limit: 60 });
 // classic brute-force targets.
 const authLimiter = rateLimit({ windowMs: 60_000, limit: 20 });
 app.use("/auth", authLimiter, express.json(), authRouter);
+app.use(limiter, express.json(), subscribersRouter);
 
 const v1 = express.Router();
 v1.use(limiter, requireApiKey);

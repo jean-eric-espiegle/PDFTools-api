@@ -85,6 +85,17 @@ db.exec(`
     body TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
+
+  -- Landing-page "not ready yet" email capture. Deliberately just storage —
+  -- there's no campaign-sending system built on top of this yet (that's a
+  -- separate, much bigger feature). Export with scripts/read-outbox.ts's
+  -- sibling script when there's actually something to send.
+  CREATE TABLE IF NOT EXISTS subscribers (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    source TEXT,
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Additive migrations: CREATE TABLE IF NOT EXISTS above is a no-op against
