@@ -39,7 +39,7 @@ Verified via response headers on both pages. Every repeat visit revalidates with
 
 ---
 
-## Fixed (commit TBD — lead capture, plan-context signup, footer branding)
+## Fixed (commit `e54d7d1` — lead capture, plan-context signup, footer branding)
 
 - **Lead capture**: `POST /subscribers` (new `subscribers` table, storage only, no campaign-sending system built on top yet) + a quiet capture band on the landing page between the final CTA and the footer, labeled "Not ready yet? Get updates" so it can't be confused with the primary "Get started" intent.
 - **Pricing tier buttons carry plan context**: paid-tier CTAs now link to `/register?plan=starter|pro|scale`; the register page stores the intent in `localStorage`, and the dashboard prompts "Subscribe to {plan}?" once the account's email is confirmed (can't auto-subscribe immediately since email verification is async via the emailed link). The intended plan's card is also visually highlighted in Billing.
