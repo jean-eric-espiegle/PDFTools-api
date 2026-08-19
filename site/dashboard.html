@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PDF Toolkit API Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  .badge {
+    display: inline-flex; align-items: center; font-size: 0.75rem; font-weight: 600;
+    padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--border);
+  }
+  .badge-success { color: var(--success); border-color: var(--success); }
+  .badge-warning { color: var(--danger); border-color: var(--danger); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; }
+  .row + .row { border-top: 1px solid var(--border); }
+  .row .row-label { color: var(--ink-muted); font-size: 0.88rem; }
+  .row .row-value { font-weight: 600; font-size: 0.95rem; }
+  .key-item { padding: 0.9rem 0; }
+  .key-item + .key-item { border-top: 1px solid var(--border); }
+  .key-item .key-name { font-weight: 600; }
+  .key-item .key-meta { color: var(--ink-muted); font-size: 0.82rem; font-family: "IBM Plex Mono", monospace; margin-top: 0.2rem; }
+  .new-key-value {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.85rem; background: var(--surface-sunken);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 0.7rem 0.9rem;
+    word-break: break-all; margin: 0.75rem 0;
+  }
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin-top: 1rem; }
+  .plan-card {
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center;
+  }
+  .plan-card.current { border-color: var(--accent); }
+  .plan-card .plan-name { font-weight: 700; font-size: 0.95rem; }
+  .plan-card .plan-price { font-family: "Sora", sans-serif; font-size: 1.3rem; font-weight: 700; margin: 0.3rem 0; }
+  .plan-card .plan-quota { color: var(--ink-muted); font-size: 0.78rem; margin-bottom: 0.75rem; }
+  @media (max-width: 640px) { .plans-grid { grid-template-columns: 1fr; } }
+  .inline-form { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+  .inline-form .field { flex: 1; min-width: 180px; margin-bottom: 0; }
+  .inline-form .btn-primary { width: auto; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="wordmark"><span class="mark">P</span>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="/docs">Docs</a>
+    <button type="button" class="btn-ghost" id="signout-btn">Sign out</button>
+  </nav>
+</header>
+
+<div class="wrap-wide" style="padding-top:2rem; padding-bottom:3rem;">
+  <div id="loading" class="skeleton">Loading your account...</div>
+
+  <div id="content" style="display:none;">
+
+    <div class="alert" id="verify-banner" style="display:none;"></div>
+
+    <div class="card">
+      <h2>Account</h2>
+      <p class="card-note">Your account details and current plan.</p>
+      <div class="row"><span class="row-label">Email</span><span class="row-value" id="acct-email"></span></div>
+      <div class="row"><span class="row-label">Email confirmed</span><span class="row-value" id="acct-verified"></span></div>
+      <div class="row"><span class="row-label">Plan</span><span class="row-value" id="acct-plan"></span></div>
+      <div class="row"><span class="row-label">Billing status</span><span class="row-value" id="acct-billing"></span></div>
+      <div class="row"><span class="row-label">Two-factor authentication</span><span class="row-value" id="acct-2fa"></span></div>
+
+      <form id="profile-form" style="margin-top:1.25rem;">
+        <div class="inline-form">
+          <div class="field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="company">Company (optional)</label>
+            <input type="text" id="company" name="company" autocomplete="organization">
+          </div>
+          <button type="submit" class="btn-small">Save profile</button>
+        </div>
+      </form>
+
+      <div style="margin-top:1rem;">
+        <button type="button" class="btn-small" id="toggle-2fa-btn"></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Billing</h2>
+      <p class="card-note">Every plan shares the same 4 endpoints. Higher tiers only change the monthly quota. Overage bills at $0.002/operation.</p>
+      <div class="plans-grid" id="plans-grid"></div>
+      <div class="alert" id="billing-alert" style="margin-top:1rem;"></div>
+    </div>
+
+    <div class="card">
+      <h2>API keys</h2>
+      <p class="card-note">Only the key's hash is stored. A new key's value is shown once, right after you create it.</p>
+
+      <div class="alert alert-success" id="new-key-alert" style="display:none;">
+        <div>New key created. Copy it now, you won't see it again:</div>
+        <div class="new-key-value" id="new-key-value"></div>
+      </div>
+
+      <div id="keys-list"></div>
+
+      <form id="create-key-form" style="margin-top:1.25rem;">
+        <div class="inline-form">
+          <div class="field">
+            <label for="key-name">New key name</label>
+            <input type="text" id="key-name" name="key-name" placeholder="e.g. production" required>
+          </div>
+          <button type="submit" class="btn-primary" id="create-key-btn" style="width:auto;">Create key</button>
+        </div>
+        <div class="field-error" id="create-key-error" style="display:none; color:var(--danger); font-size:0.85rem; margin-top:0.4rem;"></div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  var Auth = window.PdfToolkitAuth;
+  if (!Auth.requireAuthOrRedirect()) {
+    // requireAuthOrRedirect already navigated away.
+  } else {
+    init();
+  }
+
+  var PLAN_ORDER = ["free", "starter", "pro", "scale"];
+  var PLAN_INFO = {
+    free: { name: "Free", price: "$0", quota: "100 ops/mo" },
+    starter: { name: "Starter", price: "$9/mo", quota: "2,000 ops/mo" },
+    pro: { name: "Pro", price: "$29/mo", quota: "10,000 ops/mo" },
+    scale: { name: "Scale", price: "$99/mo", quota: "50,000 ops/mo" },
+  };
+
+  function init() {
+    document.getElementById("signout-btn").addEventListener("click", signOut);
+    document.getElementById("profile-form").addEventListener("submit", saveProfile);
+    document.getElementById("create-key-form").addEventListener("submit", createKey);
+
+    Promise.all([
+      Auth.apiFetch("/auth/me"),
+      Auth.apiFetch("/auth/api-keys"),
+    ]).then(function (results) {
+      var meRes = results[0], keysRes = results[1];
+      if (!meRes.ok) return; // apiFetch already redirects on 401; other errors just leave the loading state
+
+      renderAccount(meRes.body.data.user);
+      renderPlans(meRes.body.data.user);
+      renderKeys(keysRes.ok ? keysRes.body.data.keys : []);
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+    });
+  }
+
+  function renderAccount(user) {
+    document.getElementById("acct-email").textContent = user.email;
+    document.getElementById("acct-verified").textContent = user.emailVerified ? "Yes" : "No";
+    document.getElementById("acct-plan").textContent = PLAN_INFO[user.plan] ? PLAN_INFO[user.plan].name : user.plan;
+    document.getElementById("acct-billing").textContent = user.billingStatus;
+    document.getElementById("acct-2fa").textContent = user.twofaEnabled ? "Enabled" : "Disabled";
+
+    if (user.name) document.getElementById("name").value = user.name;
+    if (user.company) document.getElementById("company").value = user.company;
+
+    var toggleBtn = document.getElementById("toggle-2fa-btn");
+    toggleBtn.textContent = user.twofaEnabled ? "Disable two-factor authentication" : "Enable two-factor authentication";
+    toggleBtn.onclick = function () { toggle2fa(!user.twofaEnabled); };
+
+    var banner = document.getElementById("verify-banner");
+    if (!user.emailVerified) {
+      Auth.showAlert(banner, "Confirm your email to create API keys or subscribe to a paid plan. Check your inbox for the confirmation link.", "info");
+    }
+  }
+
+  function renderPlans(user) {
+    var grid = document.getElementById("plans-grid");
+    grid.innerHTML = "";
+    ["starter", "pro", "scale"].forEach(function (planId) {
+      var info = PLAN_INFO[planId];
+      var isCurrent = user.plan === planId;
+      var div = document.createElement("div");
+      div.className = "plan-card" + (isCurrent ? " current" : "");
+      div.innerHTML =
+        '<div class="plan-name">' + info.name + "</div>" +
+        '<div class="plan-price">' + info.price + "</div>" +
+        '<div class="plan-quota">' + info.quota + "</div>";
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = isCurrent ? "btn-ghost" : "btn-small";
+      btn.style.width = "100%";
+      btn.textContent = isCurrent ? "Current plan" : "Subscribe";
+      btn.disabled = isCurrent;
+      if (!isCurrent) btn.addEventListener("click", function () { subscribe(planId); });
+
+      div.appendChild(btn);
+      grid.appendChild(div);
+    });
+  }
+
+  function renderKeys(keys) {
+    var list = document.getElementById("keys-list");
+    if (keys.length === 0) {
+      list.innerHTML = '<p class="card-note" style="margin:0;">No API keys yet.</p>';
+      return;
+    }
+    list.innerHTML = "";
+    keys.forEach(function (key) {
+      var div = document.createElement("div");
+      div.className = "key-item";
+      div.innerHTML =
+        '<div class="key-name">' + Auth.escapeHtml(key.name) + "</div>" +
+        '<div class="key-meta">' + Auth.escapeHtml(key.plan) + " &middot; " + key.monthlyLimit + " ops/mo &middot; created " +
+        new Date(key.createdAt).toLocaleDateString() + "</div>";
+      list.appendChild(div);
+    });
+  }
+
+  function saveProfile(e) {
+    e.preventDefault();
+    var name = document.getElementById("name").value.trim();
+    var company = document.getElementById("company").value.trim();
+    if (!name) return;
+
+    Auth.apiFetch("/auth/profile", {
+      method: "POST",
+      body: JSON.stringify({ name: name, company: company }),
+    });
+  }
+
+  function toggle2fa(enable) {
+    Auth.apiFetch(enable ? "/auth/2fa/enable" : "/auth/2fa/disable", { method: "POST" }).then(function (res) {
+      if (res.ok) location.reload();
+    });
+  }
+
+  function subscribe(planId) {
+    var alertEl = document.getElementById("billing-alert");
+    Auth.hideAlert(alertEl);
+
+    Auth.apiFetch("/auth/subscribe", {
+      method: "POST",
+      body: JSON.stringify({ plan: planId }),
+    }).then(function (res) {
+      if (!res.ok) {
+        Auth.showAlert(alertEl, res.body.data.error || "Couldn't subscribe. Try again.");
+        return;
+      }
+      location.reload();
+    });
+  }
+
+  function createKey(e) {
+    e.preventDefault();
+    var nameInput = document.getElementById("key-name");
+    var errorEl = document.getElementById("create-key-error");
+    var btn = document.getElementById("create-key-btn");
+    errorEl.style.display = "none";
+
+    btn.disabled = true;
+    btn.textContent = "Creating...";
+
+    Auth.apiFetch("/auth/api-keys", {
+      method: "POST",
+      body: JSON.stringify({ name: nameInput.value.trim() }),
+    }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = "Create key";
+
+      if (!res.ok) {
+        errorEl.textContent = res.body.data.error || "Couldn't create key.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      nameInput.value = "";
+      var newKeyAlert = document.getElementById("new-key-alert");
+      document.getElementById("new-key-value").textContent = res.body.data.apiKey;
+      newKeyAlert.style.display = "block";
+
+      return Auth.apiFetch("/auth/api-keys").then(function (keysRes) {
+        if (keysRes.ok) renderKeys(keysRes.body.data.keys);
+      });
+    });
+  }
+
+  function signOut() {
+    Auth.apiFetch("/auth/logout", { method: "POST" }).then(function () {
+      Auth.clearToken();
+      location.href = "/login";
+    }).catch(function () {
+      // Even if the network call fails, still clear locally and leave.
+      // Don't trap the user on the dashboard because of a network blip.
+      Auth.clearToken();
+      location.href = "/login";
+    });
+  }
+</script>
+</body>
+</html>

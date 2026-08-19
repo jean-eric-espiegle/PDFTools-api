@@ -7,6 +7,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserRecord;
+      sessionToken?: string;
     }
   }
 }
@@ -25,6 +26,7 @@ export function requireSession(req: Request, res: Response, next: NextFunction) 
   }
 
   req.user = user;
+  req.sessionToken = token;
   next();
 }
 

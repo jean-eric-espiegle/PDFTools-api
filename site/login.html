@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in: PDF Toolkit API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sign in to your PDF Toolkit API account.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  .code-input {
+    text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 1.4rem; letter-spacing: 0.4em;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="wordmark"><span class="mark">P</span>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="/docs">Docs</a>
+    <a href="/register">Sign up</a>
+  </nav>
+</header>
+
+<div class="center-page">
+  <div class="wrap">
+    <div class="card auth-card">
+      <div id="step-password">
+        <h1>Sign in</h1>
+        <p class="auth-note" id="expired-note" style="display:none;">Your session expired. Sign in again.</p>
+
+        <div class="alert" id="alert"></div>
+
+        <form id="login-form" novalidate>
+          <div class="field" id="field-email">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" autocomplete="email" required>
+            <div class="field-error"></div>
+          </div>
+          <div class="field" id="field-password">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+            <div class="field-error"></div>
+          </div>
+          <button type="submit" class="btn-primary" id="submit-btn">Sign in</button>
+        </form>
+
+        <p class="auth-switch">
+          <a href="/forgot-password">Forgot your password?</a>
+        </p>
+        <p class="auth-switch">Don't have an account? <a href="/register">Sign up</a></p>
+      </div>
+
+      <div id="step-2fa" style="display:none;">
+        <h1>Enter your code</h1>
+        <p class="auth-note">We emailed a 6-digit code. It expires in 10 minutes.</p>
+
+        <div class="alert" id="alert-2fa"></div>
+
+        <form id="twofa-form" novalidate>
+          <div class="field" id="field-code">
+            <label for="code">Login code</label>
+            <input type="text" id="code" name="code" class="code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required>
+            <div class="field-error"></div>
+          </div>
+          <button type="submit" class="btn-primary" id="submit-2fa-btn">Verify</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  var Auth = window.PdfToolkitAuth;
+  var alertEl = document.getElementById("alert");
+  var alert2faEl = document.getElementById("alert-2fa");
+  var pendingId = null;
+
+  if (new URLSearchParams(location.search).get("expired")) {
+    document.getElementById("expired-note").style.display = "block";
+  }
+
+  document.getElementById("login-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    Auth.hideAlert(alertEl);
+
+    var email = document.getElementById("email").value.trim();
+    var password = document.getElementById("password").value;
+    var btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Signing in...";
+
+    Auth.apiFetch("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: email, password: password }),
+    }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = "Sign in";
+
+      if (!res.ok) {
+        Auth.showAlert(alertEl, res.body.data.error || "Invalid email or password.");
+        return;
+      }
+
+      if (res.body.data.twoFactorRequired) {
+        pendingId = res.body.data.pendingId;
+        document.getElementById("step-password").style.display = "none";
+        document.getElementById("step-2fa").style.display = "block";
+        document.getElementById("code").focus();
+        return;
+      }
+
+      Auth.setToken(res.body.data.sessionToken);
+      location.href = "/dashboard";
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Sign in";
+      Auth.showAlert(alertEl, "Network error. Try again.");
+    });
+  });
+
+  document.getElementById("twofa-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    Auth.hideAlert(alert2faEl);
+
+    var code = document.getElementById("code").value.trim();
+    var btn = document.getElementById("submit-2fa-btn");
+    btn.disabled = true;
+    btn.textContent = "Verifying...";
+
+    Auth.apiFetch("/auth/login/2fa", {
+      method: "POST",
+      body: JSON.stringify({ pendingId: pendingId, code: code }),
+    }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = "Verify";
+
+      if (!res.ok) {
+        Auth.showAlert(alert2faEl, res.body.data.error || "Invalid or expired code.");
+        return;
+      }
+
+      Auth.setToken(res.body.data.sessionToken);
+      location.href = "/dashboard";
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Verify";
+      Auth.showAlert(alert2faEl, "Network error. Try again.");
+    });
+  });
+</script>
+</body>
+</html>

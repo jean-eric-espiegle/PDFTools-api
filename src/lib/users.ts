@@ -99,8 +99,20 @@ export function attachUserStripeSubscription(
 }
 
 // --- Sessions ---
+//
+// Sliding-window idle timeout: SESSION_IDLE_TTL_MS is how long a session
+// stays valid since its *last use*, and findUserBySessionToken() bumps
+// expires_at forward on every successful lookup (called from
+// requireSession on every authenticated request). A token that's stolen
+// but never used dies within the idle window.
+//
+// SESSION_ABSOLUTE_TTL_MS is a hard ceiling from *creation*, independent
+// of activity — without it, a continuously-used (e.g. actively replayed by
+// an attacker) token would refresh forever and never force a re-login.
+// Sliding alone only bounds idle time, not total lifetime.
 
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const SESSION_IDLE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const SESSION_ABSOLUTE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export interface SessionRecord {
   id: string;
@@ -113,7 +125,7 @@ export interface SessionRecord {
 
 export function createSession(userId: string): { rawToken: string; expiresAt: string } {
   const rawToken = `pdftk_sess_${generateOpaqueSecret()}`;
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  const expiresAt = new Date(Date.now() + SESSION_IDLE_TTL_MS).toISOString();
 
   db.prepare(
     `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`
@@ -124,13 +136,33 @@ export function createSession(userId: string): { rawToken: string; expiresAt: st
 
 export function findUserBySessionToken(rawToken: string): UserRecord | undefined {
   const tokenHash = sha256Hex(rawToken);
-  return db
+  const now = new Date();
+
+  const session = db
     .prepare(
-      `SELECT users.* FROM sessions
-       JOIN users ON users.id = sessions.user_id
-       WHERE sessions.token_hash = ? AND sessions.revoked_at IS NULL AND sessions.expires_at > ?`
+      `SELECT * FROM sessions WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > ?`
     )
-    .get(tokenHash, new Date().toISOString()) as UserRecord | undefined;
+    .get(tokenHash, now.toISOString()) as SessionRecord | undefined;
+
+  if (!session) return undefined;
+
+  const user = findUserById(session.user_id);
+  if (!user) return undefined;
+
+  const idleExpiry = now.getTime() + SESSION_IDLE_TTL_MS;
+  const absoluteExpiry = new Date(session.created_at).getTime() + SESSION_ABSOLUTE_TTL_MS;
+  const nextExpiresAt = new Date(Math.min(idleExpiry, absoluteExpiry)).toISOString();
+
+  db.prepare(`UPDATE sessions SET expires_at = ? WHERE id = ?`).run(nextExpiresAt, session.id);
+
+  return user;
+}
+
+export function revokeSessionByToken(rawToken: string) {
+  db.prepare(`UPDATE sessions SET revoked_at = ? WHERE token_hash = ? AND revoked_at IS NULL`).run(
+    new Date().toISOString(),
+    sha256Hex(rawToken)
+  );
 }
 
 /** Revokes every active session for a user — used on password change/reset. */

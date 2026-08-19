@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign up: PDF Toolkit API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Create a free PDF Toolkit API account. 100 operations per month, no credit card required.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="wordmark"><span class="mark">P</span>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="/docs">Docs</a>
+    <a href="/login">Sign in</a>
+  </nav>
+</header>
+
+<div class="center-page">
+  <div class="wrap">
+    <div class="card auth-card">
+      <h1>Create your account</h1>
+      <p class="auth-note">Free tier: 100 operations a month, no credit card required.</p>
+
+      <div class="alert" id="alert"></div>
+
+      <form id="register-form" novalidate>
+        <div class="field" id="field-email">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+          <div class="field-error"></div>
+        </div>
+        <div class="field" id="field-password">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8">
+          <div class="field-hint">At least 8 characters.</div>
+          <div class="field-error"></div>
+        </div>
+        <button type="submit" class="btn-primary" id="submit-btn">Create account</button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  var Auth = window.PdfToolkitAuth;
+  var form = document.getElementById("register-form");
+  var alertEl = document.getElementById("alert");
+  var submitBtn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    Auth.hideAlert(alertEl);
+    Auth.clearFieldError(document.getElementById("field-email"));
+    Auth.clearFieldError(document.getElementById("field-password"));
+
+    var email = document.getElementById("email").value.trim();
+    var password = document.getElementById("password").value;
+
+    if (password.length < 8) {
+      Auth.setFieldError(document.getElementById("field-password"), "Password must be at least 8 characters.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account...";
+
+    Auth.apiFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email: email, password: password }),
+    }).then(function (res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create account";
+
+      if (!res.ok) {
+        Auth.showAlert(alertEl, res.body.data.error || "Something went wrong.");
+        return;
+      }
+
+      Auth.setToken(res.body.data.sessionToken);
+      location.href = "/dashboard?justRegistered=1";
+    }).catch(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create account";
+      Auth.showAlert(alertEl, "Network error. Try again.");
+    });
+  });
+</script>
+</body>
+</html>

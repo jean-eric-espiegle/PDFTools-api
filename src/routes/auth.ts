@@ -18,6 +18,7 @@ import {
   findUserById,
   markEmailVerified,
   revokeAllSessions,
+  revokeSessionByToken,
   setPasswordHash,
   setTwofaEnabled,
   setUserPlan,
@@ -125,6 +126,14 @@ authRouter.post(
 
 authRouter.get("/me", requireSession, (req, res) => {
   sendSuccess(res, 200, { user: toPublicUser(req.user!) });
+});
+
+authRouter.post("/logout", requireSession, (req, res) => {
+  // Server-side revoke, not just "the client deletes its copy" — a session
+  // that's merely forgotten client-side stays valid on the server until it
+  // naturally expires (up to the 1-hour idle window).
+  revokeSessionByToken(req.sessionToken!);
+  sendSuccess(res, 200, { loggedOut: true });
 });
 
 // --- Login (+ optional email 2FA) ---
