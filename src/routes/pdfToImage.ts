@@ -4,11 +4,13 @@ import { pdfToImages, type ImageFormat } from "../lib/pdfToImage.js";
 import { zipFiles } from "../lib/zip.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { sendError } from "../lib/response.js";
+import { trackUsage } from "../middleware/usage.js";
 
 export const pdfToImageRouter = Router();
 
 pdfToImageRouter.post(
   "/pdf-to-image",
+  trackUsage("pdf-to-image"),
   upload.single("file"),
   asyncHandler(async (req, res) => {
     const file = req.file;

@@ -3,11 +3,13 @@ import { upload } from "../lib/upload.js";
 import { mergePdfs } from "../lib/pdf.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { sendError } from "../lib/response.js";
+import { trackUsage } from "../middleware/usage.js";
 
 export const mergeRouter = Router();
 
 mergeRouter.post(
   "/merge",
+  trackUsage("merge"),
   upload.array("files", 20),
   asyncHandler(async (req, res) => {
     const files = req.files as Express.Multer.File[] | undefined;

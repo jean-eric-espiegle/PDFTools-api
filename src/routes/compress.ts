@@ -3,11 +3,13 @@ import { upload } from "../lib/upload.js";
 import { compressPdf } from "../lib/pdf.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { sendError } from "../lib/response.js";
+import { trackUsage } from "../middleware/usage.js";
 
 export const compressRouter = Router();
 
 compressRouter.post(
   "/compress",
+  trackUsage("compress"),
   upload.single("file"),
   asyncHandler(async (req, res) => {
     const file = req.file;

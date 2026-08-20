@@ -4,11 +4,13 @@ import { splitPdf } from "../lib/pdf.js";
 import { zipFiles } from "../lib/zip.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { sendError } from "../lib/response.js";
+import { trackUsage } from "../middleware/usage.js";
 
 export const splitRouter = Router();
 
 splitRouter.post(
   "/split",
+  trackUsage("split"),
   upload.single("file"),
   asyncHandler(async (req, res) => {
     const file = req.file;
