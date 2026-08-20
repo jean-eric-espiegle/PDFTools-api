@@ -19,3 +19,9 @@ export const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 // parent-company domain used by other projects too) so recipients can tell
 // at a glance which product is emailing them.
 export const EMAIL_FROM = process.env.EMAIL_FROM ?? "PDF Toolkit API <noreply.pdftoolkit@rune-tech.org>";
+
+// Shared secret for GET /admin/stats (see src/middleware/requireAdmin.ts and
+// ADMIN_STATS_CONTRACT.md in AdminDash). Empty by default so the endpoint
+// fails closed rather than silently accepting an empty header in an
+// unconfigured environment.
+export const ADMIN_API_KEY = process.env.ADMIN_API_KEY ?? "";
