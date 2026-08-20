@@ -5,7 +5,6 @@ import path from "node:path";
 import "./db.js";
 import { PORT } from "./config.js";
 import { requireApiKey } from "./middleware/auth.js";
-import { trackUsage } from "./middleware/usage.js";
 import { PdfToolkitError } from "./lib/pdf.js";
 import { mergeRouter } from "./routes/merge.js";
 import { splitRouter } from "./routes/split.js";
@@ -52,10 +51,17 @@ app.use(limiter, express.json(), subscribersRouter);
 
 const v1 = express.Router();
 v1.use(limiter, requireApiKey);
-v1.use(trackUsage("merge"), mergeRouter);
-v1.use(trackUsage("split"), splitRouter);
-v1.use(trackUsage("compress"), compressRouter);
-v1.use(trackUsage("pdf-to-image"), pdfToImageRouter);
+// trackUsage(endpoint) is applied inside each router at its specific route
+// (not here) so it only fires when that router's own route actually
+// matched. Gating it at this level previously meant every trackUsage()
+// mounted before the one that matched would ALSO fire, since each
+// unmatched router calls next() to fall through to the next .use() layer —
+// logging (and Stripe-reporting) phantom usage for endpoints that weren't
+// actually called.
+v1.use(mergeRouter);
+v1.use(splitRouter);
+v1.use(compressRouter);
+v1.use(pdfToImageRouter);
 v1.use(usageRouter);
 
 app.use("/v1", v1);
