@@ -25,3 +25,10 @@ export const EMAIL_FROM = process.env.EMAIL_FROM ?? "PDF Toolkit API <noreply.pd
 // fails closed rather than silently accepting an empty header in an
 // unconfigured environment.
 export const ADMIN_API_KEY = process.env.ADMIN_API_KEY ?? "";
+
+// Central Rune Tech customer/subscription registry (see
+// github.com/jean-eric-espiegle/CustomerPortal). Empty by default so it
+// no-ops safely when unset — same pattern as Stripe/Resend above — rather
+// than failing registration when this service isn't configured (e.g. CI).
+export const CUSTOMER_PORTAL_URL = process.env.CUSTOMER_PORTAL_URL ?? "";
+export const CUSTOMER_PORTAL_SERVICE_KEY = process.env.CUSTOMER_PORTAL_SERVICE_KEY ?? "";

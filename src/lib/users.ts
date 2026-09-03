@@ -17,6 +17,7 @@ export interface UserRecord {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_subscription_item_id: string | null;
+  customer_portal_id: string | null;
   created_at: string;
 }
 
@@ -66,9 +67,26 @@ export function markEmailVerified(userId: string) {
 }
 
 export function updateProfile(userId: string, params: { name: string; company?: string | null }) {
+  db.prepare(`UPDATE users SET name = ?, company = ? WHERE id = ?`).run(params.name, params.company ?? null, userId);
+}
+
+export function setCustomerPortalId(userId: string, customerPortalId: string) {
+  db.prepare(`UPDATE users SET customer_portal_id = ? WHERE id = ?`).run(customerPortalId, userId);
+}
+
+/**
+ * Marks the account's central profile as complete, either because a
+ * matching Customer Portal record already existed at registration (no
+ * form needed) or because the forced first-login form was just submitted.
+ * `profile_completed_at` gates the required-fields form on the dashboard
+ * (see requireCompletedProfile) — separate from `name`/`company`, which
+ * stay independently editable and were never required.
+ */
+export function markProfileComplete(userId: string, firstName: string, lastName: string) {
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
   db.prepare(
-    `UPDATE users SET name = ?, company = ?, profile_completed_at = COALESCE(profile_completed_at, ?) WHERE id = ?`
-  ).run(params.name, params.company ?? null, new Date().toISOString(), userId);
+    `UPDATE users SET profile_completed_at = COALESCE(profile_completed_at, ?), name = COALESCE(name, ?) WHERE id = ?`
+  ).run(new Date().toISOString(), fullName || null, userId);
 }
 
 export function setPasswordHash(userId: string, passwordHash: string) {

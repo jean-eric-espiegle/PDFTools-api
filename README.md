@@ -59,14 +59,22 @@ curl -X POST http://localhost:8787/auth/register -H "Content-Type: application/j
 npm run read-outbox -- you@example.com
 curl "http://localhost:8787/auth/confirm?token=..."
 
-# 3. Fill profile
+# 3. Complete your profile — required before creating keys or subscribing
+# (skip this if Customer Portal already had a record for your email; see below)
+curl -X POST http://localhost:8787/auth/complete-profile -H "Authorization: Bearer $SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Your","lastName":"Name","dateOfBirth":"1990-01-01","city":"Austin","country":"US","address":"123 Main St","billingAddress":"123 Main St"}'
+
+# 4. Optional display name / company (separate from the required profile above)
 curl -X POST http://localhost:8787/auth/profile -H "Authorization: Bearer $SESSION" \
   -H "Content-Type: application/json" -d '{"name":"Your Name","company":"Optional Co"}'
 
-# 4. Create a key on your own account (requires confirmed email, not a completed profile)
+# 5. Create a key on your own account (requires confirmed email AND a completed profile)
 curl -X POST http://localhost:8787/auth/api-keys -H "Authorization: Bearer $SESSION" \
   -H "Content-Type: application/json" -d '{"name":"my app"}'
 ```
+
+**Central Customer Portal check on registration** (`src/lib/customerPortal.ts`): every `/auth/register` call looks the email up against the central Rune Tech customer registry (github.com/jean-eric-espiegle/CustomerPortal, shared across all Rune Tech products). A match means this person is already a customer elsewhere — their profile is imported and `profileCompleted` is `true` immediately, no form needed. No match creates a shell record there and leaves `profileCompleted: false`, which the dashboard (`site/complete-profile.html`) forces the user through before they can create API keys or subscribe (`requireCompletedProfile` in `src/middleware/requireSession.ts`, same pattern as `requireVerifiedEmail`). Best-effort throughout: without `CUSTOMER_PORTAL_URL`/`CUSTOMER_PORTAL_SERVICE_KEY` set, every call no-ops and registration behaves as if every signup is brand-new — same graceful-degradation pattern as Stripe/Resend above, so this never blocks local dev or CI.
 
 **Login** (`POST /auth/login`) returns a session token directly, or `{twoFactorRequired: true, pendingId}` if the account has 2FA enabled (`POST /auth/2fa/enable`, toggle with `/auth/2fa/disable`) — a 6-digit code goes to the outbox, submitted back via `POST /auth/login/2fa {pendingId, code}`. Codes are single-use and expire in 10 minutes.
 

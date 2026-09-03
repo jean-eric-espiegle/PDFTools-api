@@ -95,7 +95,33 @@ async function main() {
   const confirmRes = await fetch(`${BASE_URL}/auth/confirm?token=${confirmToken}`);
   check(confirmRes.status === 200, "GET /auth/confirm with the emailed token succeeds");
 
-  console.log("\n3. Self-serve API key creation");
+  console.log("\n3. Forced profile completion (Customer Portal check runs no-op in CI, no config set)");
+  const authHeaders = { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" };
+  const beforeProfileRes = await fetch(`${BASE_URL}/auth/api-keys`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({ name: "too-early-key" }),
+  });
+  check(beforeProfileRes.status === 403, "POST /auth/api-keys is blocked before the profile is completed");
+
+  const completeRes = await fetch(`${BASE_URL}/auth/complete-profile`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      firstName: "Smoke",
+      lastName: "Test",
+      dateOfBirth: "1990-01-01",
+      city: "Testville",
+      country: "US",
+      address: "1 Test St",
+      billingAddress: "1 Test St",
+    }),
+  });
+  const completeBody = await json(completeRes);
+  check(completeRes.status === 200, "POST /auth/complete-profile returns 200", completeBody);
+  check(completeBody.data?.user?.profileCompleted === true, "profile is marked completed");
+
+  console.log("\n4. Self-serve API key creation");
   const keyRes = await fetch(`${BASE_URL}/auth/api-keys`, {
     method: "POST",
     headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
@@ -106,11 +132,11 @@ async function main() {
   const apiKey = keyBody.data?.apiKey;
   check(typeof apiKey === "string" && apiKey.startsWith("pdftk_"), "response includes a usable API key");
 
-  console.log("\n4. Auth rejection");
+  console.log("\n5. Auth rejection");
   const noKeyRes = await fetch(`${BASE_URL}/v1/usage`);
   check(noKeyRes.status === 401, "GET /v1/usage without x-api-key returns 401");
 
-  console.log("\n5. PDF endpoints");
+  console.log("\n6. PDF endpoints");
   const pdfA = await makeTestPdf();
   const pdfB = await makeTestPdf();
 
@@ -152,12 +178,12 @@ async function main() {
   check(imageRes.status === 200, "POST /v1/pdf-to-image returns 200");
   check(imageBuf[0] === 0x89 && imageBuf[1] === 0x50, "pdf-to-image response is a valid PNG");
 
-  console.log("\n6. Usage reporting");
+  console.log("\n7. Usage reporting");
   const usageRes = await fetch(`${BASE_URL}/v1/usage`, { headers: { "x-api-key": apiKey } });
   const usageBody = await json(usageRes);
   check(usageRes.status === 200 && usageBody.data?.usedThisMonth > 0, "GET /v1/usage reflects the calls just made");
 
-  console.log("\n7. Static site");
+  console.log("\n8. Static site");
   const landingRes = await fetch(`${BASE_URL}/`);
   check(landingRes.status === 200, "GET / (landing page) returns 200");
   const docsRes = await fetch(`${BASE_URL}/docs`);
