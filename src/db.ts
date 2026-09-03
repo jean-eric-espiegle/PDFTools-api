@@ -116,3 +116,9 @@ addColumnsIfMissing("api_keys", [
   ["billing_status", "TEXT NOT NULL DEFAULT 'active'"],
   ["user_id", "TEXT"],
 ]);
+
+// Links a local user to their record in the central Customer Portal
+// (see src/lib/customerPortal.ts). Null when that service was unreachable
+// at registration time (it's a best-effort side effect, not a hard
+// dependency) or hasn't run yet against an already-deployed database.
+addColumnsIfMissing("users", [["customer_portal_id", "TEXT"]]);

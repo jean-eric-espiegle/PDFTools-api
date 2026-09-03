@@ -154,6 +154,11 @@
       var meRes = results[0], keysRes = results[1];
       if (!meRes.ok) return; // apiFetch already redirects on 401; other errors just leave the loading state
 
+      if (!meRes.body.data.user.profileCompleted) {
+        location.href = "/complete-profile";
+        return;
+      }
+
       renderAccount(meRes.body.data.user);
       renderPlans(meRes.body.data.user);
       renderKeys(keysRes.ok ? keysRes.body.data.keys : []);

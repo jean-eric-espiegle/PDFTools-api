@@ -37,3 +37,16 @@ export function requireVerifiedEmail(req: Request, res: Response, next: NextFunc
   }
   next();
 }
+
+/**
+ * Backend enforcement to match the dashboard's forced first-login form
+ * (see POST /auth/complete-profile) — the frontend redirect is the primary
+ * UX, this is defense in depth so the same requirement holds even if a
+ * request bypasses the dashboard entirely.
+ */
+export function requireCompletedProfile(req: Request, res: Response, next: NextFunction) {
+  if (!req.user!.profile_completed_at) {
+    return sendError(res, 403, "Complete your account profile first");
+  }
+  next();
+}

@@ -17,8 +17,10 @@ import {
   findUserByEmail,
   findUserById,
   markEmailVerified,
+  markProfileComplete,
   revokeAllSessions,
   revokeSessionByToken,
+  setCustomerPortalId,
   setPasswordHash,
   setTwofaEnabled,
   setUserPlan,
@@ -27,10 +29,11 @@ import {
 } from "../lib/users.js";
 import { attachStripeSubscription, createApiKey, listApiKeysForUser } from "../lib/apiKeys.js";
 import { FREE_TIER_MONTHLY_LIMIT, PUBLIC_BASE_URL } from "../config.js";
-import { requireSession, requireVerifiedEmail } from "../middleware/requireSession.js";
+import { requireCompletedProfile, requireSession, requireVerifiedEmail } from "../middleware/requireSession.js";
 import { subscribeToPlan, BillingError } from "../lib/billing.js";
 import { isPaidPlan, PLANS } from "../billingPlans.js";
 import { isValidEmail } from "../lib/validation.js";
+import { createCentralCustomer, lookupCentralCustomer, updateCentralProfile } from "../lib/customerPortal.js";
 
 export const authRouter = Router();
 
@@ -58,6 +61,26 @@ authRouter.post(
     const passwordHash = await hashPassword(password);
     const user = createUser(email, passwordHash);
 
+    // Central Customer Portal check: an existing record means this person
+    // is already a Rune Tech customer elsewhere, so import their profile
+    // (no forced form needed). No record means this is a brand-new
+    // customer — create a shell record now and force the profile form on
+    // first dashboard visit (see POST /auth/complete-profile and
+    // requireCompletedProfile). Best-effort: lookupCentralCustomer/
+    // createCentralCustomer no-op safely (return undefined) if Customer
+    // Portal is unreachable or unconfigured, so registration always
+    // succeeds regardless.
+    const existingCentral = await lookupCentralCustomer(user.email);
+    if (existingCentral) {
+      setCustomerPortalId(user.id, existingCentral.customer.id);
+      if (existingCentral.baseUser) {
+        markProfileComplete(user.id, existingCentral.baseUser.firstName ?? "", existingCentral.baseUser.lastName ?? "");
+      }
+    } else {
+      const created = await createCentralCustomer(user.email);
+      if (created) setCustomerPortalId(user.id, created.customer.id);
+    }
+
     const secret = generateOpaqueSecret();
     createAuthToken(user.id, "email_confirm", secret, EMAIL_CONFIRM_TTL_MS);
     sendEmail({
@@ -76,8 +99,11 @@ authRouter.post(
 
     const session = createSession(user.id);
 
+    // Re-fetch: the CustomerPortal-driven updates above (setCustomerPortalId,
+    // markProfileComplete) wrote straight to the DB and never touched this
+    // in-memory `user` object, so it's stale by this point.
     sendSuccess(res, 201, {
-      user: toPublicUser(user),
+      user: toPublicUser(findUserById(user.id)!),
       sessionToken: session.rawToken,
       message: "Check your email to confirm your address, then fill in your profile.",
     });
@@ -117,6 +143,43 @@ authRouter.post(
     updateProfile(req.user!.id, { name: name.trim(), company: typeof company === "string" ? company.trim() : null });
 
     sendSuccess(res, 200, { user: toPublicUser(findUserById(req.user!.id)!) });
+  })
+);
+
+const REQUIRED_PROFILE_FIELDS = ["firstName", "lastName", "dateOfBirth", "city", "country", "address", "billingAddress"] as const;
+
+authRouter.post(
+  "/complete-profile",
+  requireSession,
+  asyncHandler(async (req, res) => {
+    const body = req.body ?? {};
+    const missing = REQUIRED_PROFILE_FIELDS.filter((field) => typeof body[field] !== "string" || !body[field].trim());
+    if (missing.length > 0) {
+      return sendError(res, 400, `Missing required field(s): ${missing.join(", ")}`);
+    }
+
+    const fields = {
+      firstName: body.firstName.trim(),
+      lastName: body.lastName.trim(),
+      dateOfBirth: body.dateOfBirth.trim(),
+      city: body.city.trim(),
+      country: body.country.trim(),
+      address: body.address.trim(),
+      billingAddress: body.billingAddress.trim(),
+    };
+
+    const user = req.user!;
+    // Lazily create the central record if it doesn't exist yet — happens
+    // when Customer Portal was unreachable at registration time.
+    const customerPortalId = user.customer_portal_id ?? (await createCentralCustomer(user.email))?.customer.id;
+    if (customerPortalId) {
+      if (!user.customer_portal_id) setCustomerPortalId(user.id, customerPortalId);
+      await updateCentralProfile(customerPortalId, fields);
+    }
+
+    markProfileComplete(user.id, fields.firstName, fields.lastName);
+
+    sendSuccess(res, 200, { user: toPublicUser(findUserById(user.id)!) });
   })
 );
 
@@ -282,6 +345,7 @@ authRouter.post(
   "/api-keys",
   requireSession,
   requireVerifiedEmail,
+  requireCompletedProfile,
   asyncHandler(async (req, res) => {
     const { name } = req.body ?? {};
     const user = req.user!;
@@ -330,6 +394,7 @@ authRouter.post(
   "/subscribe",
   requireSession,
   requireVerifiedEmail,
+  requireCompletedProfile,
   asyncHandler(async (req, res) => {
     const { plan } = req.body ?? {};
     const user = req.user!;
