@@ -1,11 +1,13 @@
 import cors from "cors";
-import express, { type ErrorRequestHandler } from "express";
+import express, { type ErrorRequestHandler, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import path from "node:path";
 import "./db.js";
 import { PORT } from "./config.js";
 import { requireApiKey } from "./middleware/auth.js";
 import { PdfToolkitError } from "./lib/pdf.js";
+import { reportError } from "./lib/customerPortal.js";
+import { findUserById } from "./lib/users.js";
 import { mergeRouter } from "./routes/merge.js";
 import { splitRouter } from "./routes/split.js";
 import { compressRouter } from "./routes/compress.js";
@@ -69,16 +71,39 @@ v1.use(usageRouter);
 
 app.use("/v1", v1);
 
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+// Identifies who hit an error for AdminDash's Errors page: session-based
+// requests carry req.user directly, API-key requests only carry the key
+// (which may or may not have an owning self-serve user) — admin/CLI keys
+// with no user_id report with no identity at all, which is fine, the row
+// just shows as unattributed.
+function identifyRequester(req: Request): { customerId?: string; email?: string } {
+  if (req.user) {
+    return { customerId: req.user.customer_portal_id ?? undefined, email: req.user.email };
+  }
+  if (req.apiKey?.user_id) {
+    const owner = findUserById(req.apiKey.user_id);
+    if (owner) return { customerId: owner.customer_portal_id ?? undefined, email: owner.email };
+  }
+  return {};
+}
+
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  const endpoint = req.originalUrl.split("?")[0];
+  const identity = identifyRequester(req);
+
   if (err instanceof PdfToolkitError) {
+    reportError({ endpoint, method: req.method, statusCode: err.status, errorMessage: err.message, requestBody: req.body, ...identity });
     return sendError(res, err.status, err.message);
   }
 
   if (err instanceof Error && err.message.includes("application/pdf")) {
+    reportError({ endpoint, method: req.method, statusCode: 400, errorMessage: err.message, requestBody: req.body, ...identity });
     return sendError(res, 400, err.message);
   }
 
   console.error(err);
+  const message = err instanceof Error ? err.message : "Internal server error";
+  reportError({ endpoint, method: req.method, statusCode: 500, errorMessage: message, requestBody: req.body, ...identity });
   sendError(res, 500, "Internal server error");
 };
 

@@ -81,3 +81,48 @@ export function updateCentralProfile(customerId: string, fields: ProfileFields):
     })
   );
 }
+
+// This service's key in CustomerPortal's product_labels table — matches
+// the value already used for subscriptions.productLabel.
+const SERVICE_LABEL = "PDF_TOOL";
+
+const SENSITIVE_BODY_KEYS = new Set(["password", "newPassword", "currentPassword", "token", "secret", "apiKey"]);
+
+/** Strips password/token-shaped fields before a request body is ever sent anywhere outside this process. */
+function redactBody(body: unknown): unknown {
+  if (!body || typeof body !== "object") return body;
+  const clone: Record<string, unknown> = { ...(body as Record<string, unknown>) };
+  for (const key of Object.keys(clone)) {
+    if (SENSITIVE_BODY_KEYS.has(key)) clone[key] = "[redacted]";
+  }
+  return clone;
+}
+
+export interface ErrorReportContext {
+  endpoint: string;
+  method: string;
+  statusCode: number;
+  errorMessage: string;
+  requestBody?: unknown;
+  customerId?: string;
+  email?: string;
+}
+
+/** Fire-and-forget: called from the global error handler, never awaited by the response it's reporting. */
+export function reportError(ctx: ErrorReportContext): Promise<void> {
+  return safely("report error", async () => {
+    await call("/errors", {
+      method: "POST",
+      body: JSON.stringify({
+        serviceLabel: SERVICE_LABEL,
+        endpoint: ctx.endpoint,
+        method: ctx.method,
+        statusCode: ctx.statusCode,
+        errorMessage: ctx.errorMessage,
+        requestBody: ctx.requestBody !== undefined ? JSON.stringify(redactBody(ctx.requestBody)) : undefined,
+        customerId: ctx.customerId,
+        email: ctx.email,
+      }),
+    });
+  });
+}
