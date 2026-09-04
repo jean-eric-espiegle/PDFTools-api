@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terms of Service: PDF Toolkit API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Terms of Service for PDF Toolkit API — accounts, billing, acceptable use, and liability.">
+<link rel="canonical" href="https://pdf-toolkit-api.fly.dev/terms">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f4; --surface: #ffffff; --surface-sunken: #f2efe8;
+    --ink: #18140f; --ink-muted: #6b6459; --ink-faint: #9b9384; --border: #e7e2d9;
+    --accent: #c43b24; --accent-strong: #a8331f; --accent-ink: #fff8f3;
+    --shadow: 0 1px 2px rgb(24 20 15 / 0.04), 0 8px 24px rgb(24 20 15 / 0.06);
+    --radius: 4px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f; --surface: #1f1b15; --surface-sunken: #241f18;
+      --ink: #f2eee6; --ink-muted: #b0a89a; --ink-faint: #756e60; --border: #332e26;
+      --accent: #ff6a47; --accent-strong: #ff8264; --accent-ink: #1a0d08;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f; --surface: #1f1b15; --surface-sunken: #241f18;
+    --ink: #f2eee6; --ink-muted: #b0a89a; --ink-faint: #756e60; --border: #332e26;
+    --accent: #ff6a47; --accent-strong: #ff8264; --accent-ink: #1a0d08;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.65; }
+  h1, h2, h3 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 clamp(1.25rem, 4vw, 2.5rem); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+  .wordmark { display: flex; align-items: center; gap: 0.55rem; font-family: "Sora", sans-serif; font-weight: 700; font-size: 1rem; color: var(--ink); text-decoration: none; }
+  .wordmark .mark { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
+  .topbar-links { display: flex; align-items: center; gap: clamp(0.75rem, 3vw, 1.5rem); }
+  .topbar-links a { color: var(--ink-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+  .topbar-links a:hover { color: var(--ink); }
+
+  .layout { max-width: 760px; margin: 0 auto; padding: clamp(2rem, 5vw, 3rem) clamp(1.25rem, 4vw, 2.5rem) 5rem; }
+  .updated { font-family: "IBM Plex Mono", monospace; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 0.75rem; }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; margin-bottom: 1.5rem; }
+  h2 { font-size: 1.2rem; font-weight: 700; margin-top: 2.25rem; margin-bottom: 0.6rem; }
+  p, li { color: var(--ink-muted); }
+  ul { padding-left: 1.2rem; }
+  li + li { margin-top: 0.4rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 1rem 0; }
+  th, td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--ink-faint); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="wordmark"><svg class="mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16 3 L16 29 M16 3 L24 11 M16 15 L23 21 M16 3 L8 11 M16 15 L9 21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF Toolkit API</a>
+  <nav class="topbar-links">
+    <a href="/docs">Docs</a>
+    <a href="/login">Sign in</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <div class="updated">Last updated 4 September 2026</div>
+  <h1>Terms of Service</h1>
+  <p>These terms cover your use of PDF Toolkit API — the API itself, your account, and the website at pdf-toolkit-api.fly.dev. By registering an account or using the API, you agree to them.</p>
+
+  <h2>Who we are</h2>
+  <p>PDF Toolkit API is a Rune Tech product, operated by Jean-Eric Espiegle. "We," "us," and "PDF Toolkit API" refer to that operation throughout these terms.</p>
+
+  <h2>The service</h2>
+  <p>PDF Toolkit API provides four PDF operations over a REST API — merge, split, compress, and rasterize to image — plus a self-serve account system for managing API keys and billing. We may add, change, or remove endpoints and features over time; we'll do our best to give notice of anything that breaks existing integrations.</p>
+
+  <h2>Accounts</h2>
+  <ul>
+    <li>You must provide accurate information when registering, and keep it up to date.</li>
+    <li>You're responsible for everything that happens under your account and API keys, including actions by anyone you share credentials with.</li>
+    <li>You must be legally able to enter into a contract to create an account.</li>
+    <li>Notify us immediately at <a href="mailto:inquiries@rune-tech.org">inquiries@rune-tech.org</a> if you believe an API key or your account has been compromised — we'll help you revoke and reissue it.</li>
+  </ul>
+
+  <h2>Plans and billing</h2>
+  <p>Current plans, at time of writing:</p>
+  <table>
+    <tr><th>Plan</th><th>Price</th><th>Included</th><th>Overage</th></tr>
+    <tr><td>Free</td><td>$0</td><td>100 operations/mo</td><td>— (requests blocked past quota)</td></tr>
+    <tr><td>Starter</td><td>$9/mo</td><td>2,000 operations/mo</td><td>$0.002/operation</td></tr>
+    <tr><td>Pro</td><td>$29/mo</td><td>10,000 operations/mo</td><td>$0.002/operation</td></tr>
+    <tr><td>Scale</td><td>$99/mo</td><td>50,000 operations/mo</td><td>$0.002/operation</td></tr>
+  </table>
+  <ul>
+    <li>Paid plans are billed monthly in advance; overage beyond your included quota is billed automatically at the rate above.</li>
+    <li>You can cancel a paid plan at any time from the dashboard; cancellation takes effect at the end of the current billing period, and we don't provide partial-period refunds.</li>
+    <li>We may change prices or plan quotas going forward. We'll give existing subscribers reasonable notice before a price change takes effect for them.</li>
+    <li>Free-tier requests beyond the monthly quota are rejected until the quota resets the following calendar month — they aren't billed.</li>
+  </ul>
+
+  <h2>Acceptable use</h2>
+  <p>You agree not to:</p>
+  <ul>
+    <li>Use the API to process content that's illegal, infringes someone else's rights, or that you don't have the right to process.</li>
+    <li>Attempt to circumvent rate limits, quotas, or authentication.</li>
+    <li>Reverse engineer, decompile, or attempt to extract the source code of the service, beyond what's permitted by law.</li>
+    <li>Resell or sublicense access to the API without our prior written agreement.</li>
+    <li>Use the service in a way that disrupts it for other customers, including excessive automated requests beyond documented rate limits.</li>
+  </ul>
+  <p>We may suspend or revoke access for accounts that violate these terms.</p>
+
+  <h2>Your files</h2>
+  <p>Files you upload are processed in memory to produce your requested output and are not written to disk or retained by us afterward — we don't keep copies of the PDFs you send us. You retain all rights to your own content; using the API doesn't give us any ownership over it.</p>
+
+  <h2>Service availability</h2>
+  <p>We aim for the API to be reliably available but don't guarantee uninterrupted uptime, and the service is provided without a formal SLA at this time. We may need to take the service down temporarily for maintenance or updates.</p>
+
+  <h2>Intellectual property</h2>
+  <p>The API, its documentation, and the underlying software belong to us. These terms don't grant you any rights to our intellectual property beyond what's needed to use the service as intended.</p>
+
+  <h2>Disclaimer of warranties</h2>
+  <p>The service is provided "as is," without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement.</p>
+
+  <h2>Limitation of liability</h2>
+  <p>To the fullest extent permitted by law, we aren't liable for any indirect, incidental, special, or consequential damages arising from your use of the service, and our total liability for any claim is limited to the amount you paid us in the 3 months before the claim arose.</p>
+
+  <h2>Indemnification</h2>
+  <p>You agree to indemnify us against claims arising from your misuse of the service or content you process through it in violation of these terms.</p>
+
+  <h2>Termination</h2>
+  <p>You may stop using the service and delete your account at any time. We may suspend or terminate accounts that violate these terms, with notice where practical. On termination, your API keys are revoked and your account data is deleted within a reasonable period, except where we're required to retain billing records by law.</p>
+
+  <h2>Changes to these terms</h2>
+  <p>We may update these terms from time to time. We'll update the date at the top of this page when we do; continued use of the service after a change means you accept the update.</p>
+
+  <h2>Governing law</h2>
+  <p>[GOVERNING LAW / JURISDICTION — TO BE CONFIRMED]. These terms are governed by the laws of that jurisdiction, without regard to conflict-of-law principles.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about these terms? Email <a href="mailto:inquiries@rune-tech.org">inquiries@rune-tech.org</a>.</p>
+</div>
+
+</body>
+</html>
