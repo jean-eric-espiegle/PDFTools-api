@@ -17,6 +17,7 @@ PDF Toolkit API is a developer tool aimed at indie developers and small SaaS tea
 
 - [Landing page](https://pdf-toolkit-api.fly.dev/): product overview, the four endpoints, response format, pricing
 - [API documentation](https://pdf-toolkit-api.fly.dev/docs): full endpoint reference with curl examples, authentication, account management (register/login/2FA/password reset), error codes, rate limits
+- [Terms of Service](https://pdf-toolkit-api.fly.dev/terms): accounts, billing, acceptable use, and liability terms
 
 ## Notes for citation
 
